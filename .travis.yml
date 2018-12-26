@@ -40,6 +40,7 @@ install:
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
     fi
+  - cd tests/data/media && ./gen_test_media.sh
 
 script:
 - make test

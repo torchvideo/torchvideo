@@ -2,6 +2,10 @@
 # https://github.com/pytorch/vision/blob/master/.travis.yml
 
 language: python
+cache:
+  pip: true
+  directories:
+    - $HOME/miniconda
 
 matrix:
   include:

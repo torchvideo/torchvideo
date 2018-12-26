@@ -1,0 +1,4 @@
+[flake8]
+# Default line length of black formatter
+max-line-length = 88  
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,tests/*,src/torchvideo/__init__.py

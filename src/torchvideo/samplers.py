@@ -58,7 +58,10 @@ class TemporalSegmentSampler(FrameSampler):
         return self.__repr__()
 
     def __repr__(self):
-        return "{cls_name}(segment_count={segment_count}, segment_length={segment_length})".format(
+        return (
+            "{cls_name}(segment_count={segment_count}, "
+            "segment_length={segment_length})"
+        ).format(
             cls_name=self.__class__.__name__,
             segment_count=self.segment_count,
             segment_length=self.segment_length,

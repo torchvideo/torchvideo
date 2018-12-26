@@ -1,10 +1,10 @@
 """Label sets are an abstraction that encapsulate how videos are labelled.
 
-This allows for the video data loading to be decoupled from reading labels associated with
-those videos.
+This allows for the video data loading to be decoupled from reading labels associated
+with those videos.
 """
 from abc import ABC
-from typing import Any, TypeVar
+from typing import TypeVar
 
 Label = TypeVar("Label")
 

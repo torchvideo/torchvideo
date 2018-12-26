@@ -50,7 +50,8 @@ class VideoDataset(torch.utils.data.Dataset, ABC):
 
 
 class ImageFolderVideoDataset(VideoDataset):
-    """VideoDataset from a folder containing folders of images, each folder represents a video
+    """VideoDataset from a folder containing folders of images, each folder represents
+    a video
 
     The expected folder hierarchy is like the below:
 
@@ -114,7 +115,8 @@ class ImageFolderVideoDataset(VideoDataset):
 
 
 class VideoFolderDataset(VideoDataset):
-    """VideoDataset built from a folder of videos, each forming a single example in the dataset.
+    """VideoDataset built from a folder of videos, each forming a single example in the
+    dataset.
 
     We need to know the duration of the video files, to do this, we expect
     """
@@ -133,7 +135,8 @@ class VideoFolderDataset(VideoDataset):
         )
         self.video_lengths = []
 
-    # TODO: This is very similar to ImageFolderVideoDataset consider merging into VideoDataset
+    # TODO: This is very similar to ImageFolderVideoDataset consider merging into
+    #  VideoDataset
     def __getitem__(self, index) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
         video_file = self.video_paths[index]
         video_name = video_file.stem

@@ -32,9 +32,9 @@ install:
   - sudo apt-get update
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - if [[ -d $HOME/miniconda ]]; then
-        bash miniconda.sh -b -u -p $HOME/miniconda
-    else;
-        bash miniconda.sh -b -p $HOME/miniconda
+        bash miniconda.sh -b -u -p $HOME/miniconda;
+    else
+        bash miniconda.sh -b -p $HOME/miniconda;
     fi
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r

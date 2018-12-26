@@ -19,10 +19,15 @@ def _is_int(maybe_int):
 def frame_idx_to_list(frames_idx: Union[slice, List[slice], List[int]]) -> List[int]:
     if isinstance(frames_idx, list):
         if isinstance(frames_idx[0], slice):
-            return list(itertools.chain.from_iterable([slice_to_list(s) for s in frames_idx]))
+            return list(
+                itertools.chain.from_iterable([slice_to_list(s) for s in frames_idx])
+            )
         if _is_int(frames_idx[0]):
             return frames_idx
     if isinstance(frames_idx, slice):
         return slice_to_list(frames_idx)
-    raise ValueError("Can't handle {} objects, must be slice, List[slice], or List[int]".format(
-            type(frames_idx)))
+    raise ValueError(
+        "Can't handle {} objects, must be slice, List[slice], or List[int]".format(
+            type(frames_idx)
+        )
+    )

@@ -6,7 +6,7 @@ those videos.
 from abc import ABC
 from typing import Any, TypeVar
 
-Label = TypeVar('Label')
+Label = TypeVar("Label")
 
 
 class LabelSet(ABC):  # pragma: no cover

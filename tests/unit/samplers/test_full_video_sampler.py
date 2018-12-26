@@ -15,8 +15,8 @@ def test_full_video_sampler(length):
 
 
 def test_full_video_sampler_repr():
-    assert repr(FullVideoSampler()) == 'FullVideoSampler()'
+    assert repr(FullVideoSampler()) == "FullVideoSampler()"
 
 
 def test_full_video_sampler_str():
-    assert str(FullVideoSampler()) == 'FullVideoSampler()'
+    assert str(FullVideoSampler()) == "FullVideoSampler()"

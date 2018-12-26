@@ -13,7 +13,7 @@ class NullLabelSet(LabelSet):
 
 @pytest.fixture
 def image_folder() -> Path:
-    return TEST_DATA_ROOT / 'media' / 'video_image_folder'
+    return TEST_DATA_ROOT / "media" / "video_image_folder"
 
 
 def test_image_folder_video_dataset_loads_all_frames_by_default(image_folder):
@@ -21,7 +21,9 @@ def test_image_folder_video_dataset_loads_all_frames_by_default(image_folder):
     video1_frame_count = 50
     video1_size = (368, 640)
 
-    dataset = ImageFolderVideoDataset(image_folder, filename_template='frame_{:05d}.jpg')
+    dataset = ImageFolderVideoDataset(
+        image_folder, filename_template="frame_{:05d}.jpg"
+    )
 
     assert len(dataset) == video_count
 

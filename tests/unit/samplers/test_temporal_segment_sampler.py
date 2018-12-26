@@ -36,7 +36,9 @@ def test_segment_sampler_with_average_segment_frame_count_greater_than_1():
     frame_idx = sampler.sample(frame_count)
 
     assert len(frame_idx) == segment_count
-    assert len(set(frame_idx)) == segment_count  # segment indices should be unique if possible
+    assert (
+        len(set(frame_idx)) == segment_count
+    )  # segment indices should be unique if possible
     assert_ordered(frame_idx)
     assert np.all(np.array(frame_idx) < frame_count)
 
@@ -53,11 +55,17 @@ def test_segment_sampler_index_properties(segment_count, segment_length, video_l
 
 
 def test_segment_sampler_repr():
-    assert repr(TemporalSegmentSampler(1, 5)) == 'TemporalSegmentSampler(segment_count=1, segment_length=5)'
+    assert (
+        repr(TemporalSegmentSampler(1, 5))
+        == "TemporalSegmentSampler(segment_count=1, segment_length=5)"
+    )
 
 
 def test_segment_sampler_str():
-    assert str(TemporalSegmentSampler(1, 5)) == 'TemporalSegmentSampler(segment_count=1, segment_length=5)'
+    assert (
+        str(TemporalSegmentSampler(1, 5))
+        == "TemporalSegmentSampler(segment_count=1, segment_length=5)"
+    )
 
 
 def test_segment_length_should_be_greater_than_0():

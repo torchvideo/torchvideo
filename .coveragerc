@@ -1,0 +1,4 @@
+[paths]
+source =
+    src/torchvideo
+    .tox/*/lib/python*/site-packages/torchvideo

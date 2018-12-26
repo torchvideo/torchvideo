@@ -1,0 +1,3 @@
+[submodule "vendor/nvvl"]
+	path = vendor/nvvl
+	url = https://github.com/NVIDIA/nvvl.git

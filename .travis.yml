@@ -17,16 +17,16 @@ matrix:
       script: flake8
 
     - python: "3.5"
-    - python: "3.5"
-      env: IMAGE_BACKEND=Pillow-SIMD
+      #    - python: "3.5"
+      #      env: IMAGE_BACKEND=Pillow-SIMD
 
     - python: "3.6"
-    - python: "3.6"
-      env: IMAGE_BACKEND=Pillow-SIMD
+      #    - python: "3.6"
+      #      env: IMAGE_BACKEND=Pillow-SIMD
 
     - python: "3.7"
-    - python: "3.7"
-      env: IMAGE_BACKEND=Pillow-SIMD
+      #    - python: "3.7"
+      #      env: IMAGE_BACKEND=Pillow-SIMD
 
 install:
   - sudo apt-get update

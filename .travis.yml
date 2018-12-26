@@ -46,11 +46,12 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch
   - conda install -c conda-forge ffmpeg av lintel
   - source activate test-environment
+  - python install -r dev-requirements.txt
   - python setup.py install
-  - pip install --upgrade pytest
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
     fi
+
   - pushd tests/data/media; ./gen_test_media.sh; popd
 
 script:

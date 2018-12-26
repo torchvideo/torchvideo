@@ -12,7 +12,7 @@ cache:
 matrix:
   include:
     - env: LINT_CHECK
-      python: "3.5"
+      python: "3.6"
       install: pip install flake8
       script: flake8
 

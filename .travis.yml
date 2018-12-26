@@ -2,6 +2,8 @@
 # https://github.com/pytorch/vision/blob/master/.travis.yml
 
 language: python
+sudo: required
+dist: xenial
 cache:
   pip: true
   directories:

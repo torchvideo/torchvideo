@@ -9,7 +9,7 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import find_packages, setup, Command, find_namespace_packages
+from setuptools import setup, Command, find_namespace_packages
 
 _here = os.path.dirname(__file__)
 print(_here)

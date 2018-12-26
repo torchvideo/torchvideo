@@ -9,7 +9,7 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import setup, Command, find_namespace_packages
+from setuptools import setup, Command, find_packages
 
 _here = os.path.dirname(__file__)
 print(_here)
@@ -32,7 +32,7 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'visualisation': ['moviepy'],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -99,7 +99,7 @@ setup(
     python_requires=REQUIRES_PYTHON,
     url=about['__url__'],
     package_dir={'': 'src'},
-    packages=find_namespace_packages(where='src'),
+    packages=find_packages(where='src'),
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
 

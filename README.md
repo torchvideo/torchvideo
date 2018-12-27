@@ -6,7 +6,7 @@
 
 
 
-**WARNING: This library is in development and should not be considered stable or reliable, use at your own 
+**WARNING: This library is EXPERIMENTAL and in development and should not be considered stable or reliable, use at your own 
 risk**
 
 A [PyTorch](https://pytorch.org/) library for video-based computer vision tasks. `torchvideo` provides 

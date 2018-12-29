@@ -46,6 +46,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy pytorch torchvision -c pytorch
   - source activate test-environment
   - conda install -c conda-forge numpy ffmpeg av lintel opencv
+  - pip install -r dev-requirements.txt
   - pip install gulpio moviepy
   - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then

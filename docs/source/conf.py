@@ -219,7 +219,15 @@ todo_include_todos = True
 #
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-autoclass
 autoclass_content = "both"
-# Mock out all external dependencies as RTD fails to build otherwise -- sadly we've
-# tried building with conda support but loading the conda-forge challenge uses up too
-# much RAM and crashes the RTD worker
-autodoc_mock_imports = ['PIL', 'gulpio', 'numpy', 'torch', 'torchvision']
+
+# Mock out external dependencies that don't provide types present in any signature.
+# Why?
+# - Installing all the dependencies is very slow
+# - Not all dependencies can be installed using pip along
+# - Conda support is limited on RTD by the worker machines only having 512MB RAM which is insufficient
+#   for loading the conda-forge channel under which many of our dependencies lie.
+# If we mock out everything we don't get proper types in the docs due to sphinx-autodoc-typehints
+# not being able to resolve the types... So, in order to resolve the above the best we can do is
+# install numpy and torch, (Pillow is already installed on RTD) and mock the rest
+
+autodoc_mock_imports = ["gulpio", "lintel", "moviepy", "torchvision"]

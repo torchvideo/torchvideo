@@ -6,7 +6,6 @@ import PIL.Image
 from PIL.Image import Image
 import numpy as np
 import torch.utils.data
-from torchvision.transforms.functional import to_tensor
 
 from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import FrameSampler, FullVideoSampler

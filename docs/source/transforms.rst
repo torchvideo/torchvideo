@@ -53,6 +53,7 @@ These transforms all take an iterator/iterable of :class:`PIL.Image.Image` and p
 an iterator of :class:`PIL.Image.Image`. To draw image out of the transform you should
 compose your sequence of PIL Video transforms with :class:`CollectFrames`.
 
+
 CenterCropVideo
 ~~~~~~~~~~~~~~~
 

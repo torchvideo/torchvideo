@@ -11,7 +11,8 @@ sampling strategies (like TSN, TRN) whereas others like 3D CNNs use dense sampli
 strategies. In order to accommodate these different architectures we offer a variety
 of sampling strategies with the opportunity to implement your own.
 
-.. toctree:: Contents
+.. contents:: Contents
+   :local:
    :depth: 2
 
 FrameSampler

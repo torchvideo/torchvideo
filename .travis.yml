@@ -48,7 +48,7 @@ install:
   - source activate test-environment
   - pip install gulpio moviepy
   - pip install -r dev-requirements.txt
-  - python setup.py install .[visualisation]
+  - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
     fi

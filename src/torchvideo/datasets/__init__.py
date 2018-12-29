@@ -10,6 +10,7 @@ from torchvision.transforms.functional import to_tensor
 
 from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import FrameSampler, FullVideoSampler
+from torchvideo.transforms import PILVideoToTensor
 
 Label = Any
 
@@ -172,7 +173,7 @@ class ImageFolderVideoDataset(VideoDataset):
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_folder)
         if self.transform is None:
-            frames_tensor = torch.stack([to_tensor(frame) for frame in frames])
+            frames_tensor = PILVideoToTensor()(frames)
         else:
             frames_tensor = self.transform(frames)
 

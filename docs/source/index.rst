@@ -18,6 +18,8 @@ pytorch. It contains transforms and dataset classes. It is built atop of
    samplers
    transforms
 
+   bibliography
+
 .. automodule:: torchvideo
    :members:
 

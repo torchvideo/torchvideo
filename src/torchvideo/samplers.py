@@ -93,9 +93,9 @@ class TemporalSegmentSampler(FrameSampler):
             Frame indices as list of ints
 
         """
-        average_segment_duration: int = (
+        average_segment_duration = (
             video_length - self.segment_length + 1
-        ) // self.segment_count
+        ) // self.segment_count  # type: int
         if video_length <= 0:
             raise ValueError(
                 "Video must be at least 1 frame long but was {} frames long".format(

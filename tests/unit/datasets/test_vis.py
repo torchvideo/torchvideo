@@ -18,5 +18,5 @@ def test_vis_raises_error_if_moviepy_not_available():
         from torchvideo.datasets.vis import show_video
     finally:
         sys.modules["moviepy"] = original_moviepy
-    with pytest.raises(ModuleNotFoundError, match="please install moviepy"):
+    with pytest.raises(ImportError, match="please install moviepy"):
         show_video(frames)

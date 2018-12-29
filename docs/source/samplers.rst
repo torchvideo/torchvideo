@@ -34,3 +34,8 @@ TemporalSegmentSampler
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: TemporalSegmentSampler
     :members:
+
+LambdaSampler
+~~~~~~~~~~~~~
+.. autoclass:: LambdaSampler
+    :members:

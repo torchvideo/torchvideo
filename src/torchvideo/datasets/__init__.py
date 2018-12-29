@@ -340,3 +340,17 @@ class GulpVideoDataset(VideoDataset):
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]
         return len(info["frame_info"])
+
+
+class DummyLabelSet(LabelSet):
+    """A dummy label set that returns the same label regardless of video"""
+
+    def __init__(self, label: Label = 0):
+        """
+        Args:
+            label: The label given to any video
+        """
+        self.label = label
+
+    def __getitem__(self, video_name) -> Label:
+        return self.label

@@ -39,6 +39,11 @@ flexibility in swapping out different storage methods and labelling methods. All
 datasets optionally take a :class:`LabelSet` that performs the mapping between
 example and label.
 
+
 LabelSet
 ~~~~~~~~
 .. autoclass:: LabelSet
+
+DummyLabelSet
+~~~~~~~~~~~~~
+.. autoclass:: DummyLabelSet

@@ -1,6 +1,8 @@
 from abc import ABC
-from typing import Union, List
+from typing import Union, List, Callable
 from numpy.random import randint, np
+
+from torchvideo.internal.utils import frame_idx_to_list
 
 
 class FrameSampler(ABC):  # pragma: no cover
@@ -166,3 +168,26 @@ class TemporalSegmentSampler(FrameSampler):
             low=0, high=average_segment_duration, size=self.segment_count
         )
         return list(segment_start_idx + segment_start_offsets)
+
+
+class LambdaSampler(FrameSampler):
+    """Custom sampler constructed from a user provided function."""
+
+    def __init__(self, sampler: Callable[[int], Union[slice, List[slice], List[int]]]):
+        """
+
+        Args:
+            sampler: Function that takes an ``int``, the video length in frames and
+                returns a slice, list of ints, or list of slices representing indices
+                to sample from the video. All the indices should be less than the
+                video length - 1.
+        """
+        self._fn = sampler
+
+    def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
+        frame_idx = self._fn(video_length)
+        if not all([i < (video_length - 1) for i in frame_idx_to_list(frame_idx)]):
+            raise ValueError(
+                "Invalid frame_idx {} from user provided sampler".format(frame_idx)
+            )
+        return frame_idx

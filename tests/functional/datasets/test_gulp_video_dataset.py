@@ -2,18 +2,67 @@ import pytest
 
 from tests import TEST_DATA_ROOT
 from torchvideo.datasets import GulpVideoDataset
+from torchvideo.samplers import LambdaSampler
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def gulp_dir():
     return TEST_DATA_ROOT / "media" / "gulp_output"
 
 
-def test_gulp_video_dataset(gulp_dir):
-    dataset = GulpVideoDataset(gulp_dir)
-    frames, label = dataset[0]
-    assert dataset._video_ids[0] == "video0"
+@pytest.fixture(scope="module")
+def gulp_dataset(gulp_dir):
+    return GulpVideoDataset(gulp_dir)
 
-    assert int(label) == 0
-    frame_shape = frames.size()
-    assert frame_shape == (3, 50, 368, 640)
+
+class TestGulpVideoDataset:
+    video_count = 11
+    video_length = 50
+    size = (368, 640)
+
+    def test_dataset_length(self, gulp_dataset):
+        assert len(gulp_dataset) == self.video_count
+
+    def test_video_id(self, gulp_dataset):
+        assert gulp_dataset._video_ids[0] == "video0"
+
+    def test_loads_all_frames_by_default(self, gulp_dataset):
+        dataset = gulp_dataset
+        frames, label = dataset[0]
+
+        assert int(label) == 0
+        frame_shape = frames.size()
+        assert frame_shape == (3, self.video_length, *self.size)
+
+    def test_loading_by_slice(self, gulp_dataset):
+        dataset = gulp_dataset
+        length = 4
+        gulp_dataset.sampler = LambdaSampler(lambda video_length: slice(0, length, 1))
+
+        frames, _ = dataset[0]
+
+        frames_shape = frames.size()
+        assert frames_shape == (3, length, *self.size)
+
+    def test_loading_by_list_of_slices(self, gulp_dataset):
+        dataset = gulp_dataset
+        lengths = 2, 3, 4
+        gulp_dataset.sampler = LambdaSampler(
+            lambda video_length: [slice(0, l, 1) for l in lengths]
+        )
+
+        frames, _ = dataset[0]
+
+        frames_shape = frames.size()
+        assert frames_shape == (3, sum(lengths), *self.size)
+
+    def test_loading_by_list_of_int(self, gulp_dataset):
+        dataset = gulp_dataset
+        frames_idx = [0, 1, 4, 7]
+
+        gulp_dataset.sampler = LambdaSampler(lambda video_length: frames_idx)
+
+        frames, _ = dataset[0]
+
+        frames_shape = frames.size()
+        assert frames_shape == (3, len(frames_idx), *self.size)

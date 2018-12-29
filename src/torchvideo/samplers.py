@@ -58,6 +58,33 @@ class FullVideoSampler(FrameSampler):
         return "{cls_name}()".format(cls_name=self.__class__.__name__)
 
 
+class ClipSampler(FrameSampler):
+    """Sample clips of a fixed duration uniformly randomly from a video.
+    """
+
+    def __init__(self, clip_length: int):
+        """
+        Args:
+            clip_length: Duration of clip in frames
+        """
+        self.clip_length = clip_length
+
+    def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
+        if video_length < self.clip_length:
+            raise ValueError(
+                "Video ({} frames) is shorter than clip ({} frames)".format(
+                    video_length, self.clip_length
+                )
+            )
+        max_offset = video_length - self.clip_length
+
+        start_index = 0 if max_offset == 0 else randint(0, max_offset)
+        return slice(start_index, start_index + self.clip_length, 1)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(clip_length={})".format(self.clip_length)
+
+
 class TemporalSegmentSampler(FrameSampler):
     """FrameSampler that implements the sampling style originated in [TSN]_
 
@@ -139,8 +166,3 @@ class TemporalSegmentSampler(FrameSampler):
             low=0, high=average_segment_duration, size=self.segment_count
         )
         return list(segment_start_idx + segment_start_offsets)
-
-
-# TODO:
-# - Random subsequence sampler
-# - TSN sampler

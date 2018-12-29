@@ -3,7 +3,8 @@ from typing import List, Union
 
 
 def slice_to_list(slice_: slice) -> List[int]:
-    return list(range(slice_.start, slice_.stop, slice_.step))
+    step = 1 if slice_.step is None else slice_.step
+    return list(range(slice_.start, slice_.stop, step))
 
 
 def _is_int(maybe_int):

@@ -20,6 +20,11 @@ FrameSampler
 .. autoclass:: FrameSampler
     :members:
 
+ClipSampler
+~~~~~~~~~~~
+.. autoclass:: ClipSampler
+    :members:
+
 FullVideoSampler
 ~~~~~~~~~~~~~~~~
 .. autoclass:: FullVideoSampler

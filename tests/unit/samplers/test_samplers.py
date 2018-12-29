@@ -1,14 +1,15 @@
 # PyTest has weird syntax for parameterizing fixtures:
 # https://docs.pytest.org/en/latest/fixture.html#parametrizing-fixtures
+
 import numpy as np
 
 import pytest
-from hypothesis import given
+from hypothesis import given, assume
 import hypothesis.strategies as st
 
 from assertions.seq import assert_ordered
 from torchvideo.internal.utils import frame_idx_to_list
-from torchvideo.samplers import FullVideoSampler, TemporalSegmentSampler
+from torchvideo.samplers import FullVideoSampler, TemporalSegmentSampler, ClipSampler
 
 
 def full_video_sampler():
@@ -42,3 +43,19 @@ class TestFrameSampler:
         assert_ordered(frames_idx)
         assert np.all(np.array(frames_idx) >= 0)
         assert np.all(np.array(frames_idx) < frame_count)
+
+
+class TestClipSampler:
+    @given(st.integers(1, 100), st.integers(1, 100))
+    def test_clip_sampler_produces_frame_idx_of_given_length(
+        self, video_length, clip_length
+    ):
+        assume(video_length >= clip_length)
+        sampler = ClipSampler(clip_length)
+
+        frame_idx = sampler.sample(video_length)
+
+        assert len(frame_idx_to_list(frame_idx)) == clip_length
+
+    def test_repr(self):
+        assert repr(ClipSampler(10)) == "ClipSampler(clip_length=10)"

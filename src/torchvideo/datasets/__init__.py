@@ -1,4 +1,5 @@
 from abc import ABC
+from collections import namedtuple
 from pathlib import Path
 from typing import Union, Tuple, List, Callable, Any, Iterator, Optional, Dict
 
@@ -7,30 +8,17 @@ from PIL.Image import Image
 import numpy as np
 import torch.utils.data
 
+from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import FrameSampler, FullVideoSampler
 from torchvideo.transforms import PILVideoToTensor
 
-Label = Any
 
-_default_sampler = FullVideoSampler
-_VIDEO_FILE_EXTENSIONS = {
-    "mp4",
-    "webm",
-    "avi",
-    "3gp",
-    "wmv",
-    "mpg",
-    "mpeg",
-    "mov",
-    "mkv",
-}
+Label = Any
 Transform = Callable[[Iterator[Image]], torch.Tensor]
 
 
-def _is_video_file(path: Path) -> bool:
-    extension = path.name.lower().split(".")[-1]
-    return extension in _VIDEO_FILE_EXTENSIONS
+_default_sampler = FullVideoSampler
 
 
 class LabelSet(ABC):  # pragma: no cover
@@ -235,8 +223,9 @@ class VideoFolderDataset(VideoDataset):
         self.video_paths = sorted(
             [child for child in root_path.iterdir() if _is_video_file(child)]
         )
-        # TODO: Read in video length in frames
-        self.video_lengths = []
+        self.video_lengths = [
+            _get_videofile_frame_count(vid_path) for vid_path in self.video_paths
+        ]
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset

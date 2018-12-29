@@ -15,4 +15,4 @@ def test_gulp_video_dataset(gulp_dir):
     assert dataset._video_ids[0] == "video0"
 
     assert int(label) == 0
-    assert frames.size() == (50, 368, 640, 3)
+    assert frames.size() == (3, 50, 368, 640)

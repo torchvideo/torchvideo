@@ -28,5 +28,4 @@ def test_image_folder_video_dataset_loads_all_frames_by_default(image_folder):
     assert len(dataset) == video_count
 
     frames = dataset[1]
-    assert len(frames) == video1_frame_count
-    assert frames.shape == (video1_frame_count, *video1_size, 3)
+    assert frames.shape == (3, video1_frame_count, *video1_size)

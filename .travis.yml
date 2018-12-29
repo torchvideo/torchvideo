@@ -47,7 +47,7 @@ install:
   - source activate test-environment
   - conda install -c conda-forge numpy ffmpeg av lintel opencv
   - pip install -r dev-requirements.txt
-  - pip install gulpio moviepy
+  - pip install codecov gulpio moviepy
   - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
@@ -61,4 +61,4 @@ script:
 after_success:
 - coverage combine
 - coverage report
-- bash < (curl -s https://codecov.io/bash)
+- codecov

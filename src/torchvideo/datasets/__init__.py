@@ -314,24 +314,39 @@ class GulpVideoDataset(VideoDataset):
         label = meta["label"]
         # TODO: Use self.transform if set
         if isinstance(frame_idx, slice):
-            frames, _ = self.gulp_dir[id_, frame_idx]
-            if self.transform is not None:
-                return self.transform(frames), label
-            return torch.Tensor(frames), label
+            frames = self._load_frames(id_, frame_idx)
         elif isinstance(frame_idx, list):
             if isinstance(frame_idx[0], slice):
-                frames = [self.gulp_dir[id_, slice_][0] for slice_ in frame_idx]
-                if self.transform is not None:
-                    return self.transform(frames), label
-                return torch.Tensor(np.array(frames)), label
+                frames = np.concatenate(
+                    [self._load_frames(id_, slice_) for slice_ in frame_idx], axis=1
+                )
             elif isinstance(frame_idx[0], int):
-                frames = [
-                    self.gulp_dir[id_, slice(index, index + 1)][0]
-                    for index in frame_idx
-                ]
-                if self.transform is not None:
-                    return self.transform(frames), label
-                return torch.Tensor(np.array(frames))
+                frames = np.concatenate(
+                    [
+                        self._load_frames(id_, slice(index, index + 1))
+                        for index in frame_idx
+                    ],
+                    axis=1,
+                )
+            else:
+                raise TypeError(
+                    "frame_idx was a list of {} but we only support "
+                    "int and slice elements".format(type(frame_idx[0]).__name__)
+                )
+        else:
+            raise TypeError(
+                "frame_idx was of type {} but we only support slice, "
+                "List[slice], List[int]".format(type(frame_idx).__name__)
+            )
+
+        if self.transform is not None:
+            return self.transform(frames), label
+        return torch.Tensor(frames), label
+
+    def _load_frames(self, id_: str, frame_idx: slice):
+        frames, _ = self.gulp_dir[id_, frame_idx]
+        frames = np.moveaxis(frames, -1, 0)
+        return frames
 
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]

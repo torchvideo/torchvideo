@@ -3,18 +3,44 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to torchvideo's documentation!
-======================================
+torchvideo
+==========
+
+Similar to :mod:`torchvision`, :mod:`torchvideo` is a library for working with video in
+pytorch. It contains transforms and dataset classes. It is built atop of
+:mod:`torchvision` and designed to be used in conjunction.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Package Reference
+
+   datasets
+   samplers
+   transforms
+
+.. automodule:: torchvideo
+   :members:
 
 
+Installation
+------------
 
-Indices and tables
-==================
+Install torchvideo from PyPI with:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. code-block:: bash
+
+   $ pip install torchvideo
+
+
+or the cutting edge branch from github with:
+
+.. code-block:: bash
+
+   $ pip install git+https://github.com/willprice/torchvideo.git
+
+We **strongly** advise you to install Pillow-simd to speed up image transformations.
+Do this after installing torchvideo.
+
+.. code-block:: bash
+
+   $ pip install pillow-simd

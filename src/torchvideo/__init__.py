@@ -1,13 +1,16 @@
 import warnings
 
-from torchvideo import datasets, transforms, samplers
+from . import datasets, transforms, samplers
 from .__version__ import __title__, __description__, __url__, __version__
-from .__version__ import (
-    __author__,
-    __author_email__,
-    __license__,
-    __copyright__,
-)
+from .__version__ import __author__, __author_email__, __license__, __copyright__
+
+__all__ = [
+    "set_video_backend",
+    "get_video_backend",
+    "datasets",
+    "transforms",
+    "samplers",
+]
 
 _default_backend = "lintel"
 _video_backend = _default_backend

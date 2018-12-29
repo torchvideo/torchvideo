@@ -17,4 +17,4 @@ functional_test:
 
 .PHONY: docs
 docs:
-	$(MAKE) -C docs dirhtml
+	$(MAKE) -C docs html

@@ -6,6 +6,10 @@ torchvideo.datasets
 Datasets
 --------
 
+.. contents:: Contents
+   :local:
+   :depth: 2
+
 VideoDataset
 ~~~~~~~~~~~~
 .. autoclass:: VideoDataset

@@ -11,22 +11,10 @@ fi
 
 
 for i in $(seq 0 10); do
-    image_dest_dir="video_image_folder/video$i"
-    mkdir -p "$image_dest_dir"
-    if [[ ! -f "$image_dest_dir/frame_00001.jpg" ]]; then
-        ffmpeg -i "$SRC_VIDEO" \
-            -ss "00:00:$(printf %02d $i)" \
-            -t 2 \
-            "$image_dest_dir/frame_%05d.jpg"
-    fi
-
-    mkdir -p video_folder
-    video="video_folder/video$i.mp4"
-    if [[ ! -f "$video" ]]; then
-        ffmpeg -i "$SRC_VIDEO" \
-            -ss "00:00:$(printf %02d $i)" \
-            -t 2 \
-            "$video"
+    dest_dir="video_image_folder/video$i"
+    mkdir -p "$dest_dir"
+    if [[ ! -f "$dest_dir/frame_00001.jpg" ]]; then
+        ffmpeg -i "$SRC_VIDEO" -ss "00:00:$(printf %02d $i)" -t 2 "$dest_dir/frame_%05d.jpg"
     fi
 done
 
@@ -40,4 +28,3 @@ gulp_20bn_csv_jpeg \
     gulp_videos.csv \
     video_image_folder \
     gulp_output
-

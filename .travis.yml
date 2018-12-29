@@ -43,11 +43,10 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch
-  - conda install -c conda-forge ffmpeg av lintel opencv
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy pytorch torchvision -c pytorch
   - source activate test-environment
+  - conda install -c conda-forge numpy ffmpeg av lintel opencv
   - pip install gulpio moviepy
-  - pip install -r dev-requirements.txt
   - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;

@@ -201,7 +201,7 @@ epub_exclude_files = ["search.html"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "moviepy": ("https://zulko.github.io/moviepy", None),
-    "numpy": ("http://docs.scipy.org/doc/numpy", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
     "PIL": ("https://pillow.readthedocs.io/en/stable/", None),
     "pandas": ("http://pandas.pydata.org/pandas-docs/stable/", None),
     "torch": ("https://pytorch.org/docs/stable", None),
@@ -219,3 +219,7 @@ todo_include_todos = True
 #
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-autoclass
 autoclass_content = "both"
+# Mock out all external dependencies as RTD fails to build otherwise -- sadly we've
+# tried building with conda support but loading the conda-forge challenge uses up too
+# much RAM and crashes the RTD worker
+autodoc_mock_imports = ['PIL', 'gulpio', 'numpy', 'torch', 'torchvision']

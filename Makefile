@@ -11,7 +11,7 @@ test: unit_test functional_test
 unit_test:
 	COVERAGE_FILE=.coverage-unit PYTHONPATH=$(PYTHONPATH) pytest tests/unit
 
-.PHONY: function_test
+.PHONY: functional_test
 functional_test:
 	COVERAGE_FILE=.coverage-functional PYTHONPATH=$(PYTHONPATH) pytest tests/functional
 

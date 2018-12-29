@@ -1,4 +1,5 @@
 from abc import ABC
+from collections import namedtuple
 from pathlib import Path
 from typing import Union, Tuple, List, Callable, Any, Iterator, Optional, Dict
 
@@ -6,32 +7,18 @@ import PIL.Image
 from PIL.Image import Image
 import numpy as np
 import torch.utils.data
-from torchvision.transforms.functional import to_tensor
 
+from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import FrameSampler, FullVideoSampler
 from torchvideo.transforms import PILVideoToTensor
 
-Label = Any
 
-_default_sampler = FullVideoSampler
-_VIDEO_FILE_EXTENSIONS = {
-    "mp4",
-    "webm",
-    "avi",
-    "3gp",
-    "wmv",
-    "mpg",
-    "mpeg",
-    "mov",
-    "mkv",
-}
+Label = Any
 Transform = Callable[[Iterator[Image]], torch.Tensor]
 
 
-def _is_video_file(path: Path) -> bool:
-    extension = path.name.lower().split(".")[-1]
-    return extension in _VIDEO_FILE_EXTENSIONS
+_default_sampler = FullVideoSampler
 
 
 class LabelSet(ABC):  # pragma: no cover
@@ -236,8 +223,9 @@ class VideoFolderDataset(VideoDataset):
         self.video_paths = sorted(
             [child for child in root_path.iterdir() if _is_video_file(child)]
         )
-        # TODO: Read in video length in frames
-        self.video_lengths = []
+        self.video_lengths = [
+            _get_videofile_frame_count(vid_path) for vid_path in self.video_paths
+        ]
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset
@@ -314,25 +302,38 @@ class GulpVideoDataset(VideoDataset):
         meta = self.gulp_dir.merged_meta_dict[id_]["meta_data"][0]
         label = meta["label"]
         # TODO: Use self.transform if set
+        print(frame_idx)
         if isinstance(frame_idx, slice):
-            frames, _ = self.gulp_dir[id_, frame_idx]
+            frames = self._read_frames(frame_idx, id_)
+            print(frames.shape)
             if self.transform is not None:
                 return self.transform(frames), label
             return torch.Tensor(frames), label
         elif isinstance(frame_idx, list):
             if isinstance(frame_idx[0], slice):
-                frames = [self.gulp_dir[id_, slice_][0] for slice_ in frame_idx]
+                frames = np.concatenate(
+                    [self._read_frames(slice_, id_) for slice_ in frame_idx], axis=1
+                )
                 if self.transform is not None:
                     return self.transform(frames), label
-                return torch.Tensor(np.array(frames)), label
+                return torch.Tensor(frames), label
             elif isinstance(frame_idx[0], int):
-                frames = [
-                    self.gulp_dir[id_, slice(index, index + 1)][0]
-                    for index in frame_idx
-                ]
+                frames = np.concatenate(
+                    [
+                        self._read_frames(slice(index, index + 1), id_)
+                        for index in frame_idx
+                    ],
+                    axis=1,
+                )
                 if self.transform is not None:
                     return self.transform(frames), label
-                return torch.Tensor(np.array(frames))
+                return torch.Tensor(frames)
+
+    def _read_frames(self, frame_idx, id_):
+        # Result in THWC format
+        frames, _ = self.gulp_dir[id_, frame_idx]
+        # Map to CTHW format
+        return np.rollaxis(np.array(frames), -1)
 
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]

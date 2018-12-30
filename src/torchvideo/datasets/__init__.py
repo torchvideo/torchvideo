@@ -217,11 +217,11 @@ class VideoFolderDataset(VideoDataset):
             sampler: Optional sampler for drawing frames from each video
             transform: Optional transform over the list of frames
         """
-        super(VideoFolderDataset, self).__init__(
+        super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
         self.video_paths = sorted(
-            [child for child in root_path.iterdir() if _is_video_file(child)]
+            [child for child in self.root_path.iterdir() if _is_video_file(child)]
         )
         self.video_lengths = [
             _get_videofile_frame_count(vid_path) for vid_path in self.video_paths
@@ -284,7 +284,7 @@ class GulpVideoDataset(VideoDataset):
             sampler: Optional sampler for drawing frames from each video
             transform: Optional transform over the list of frames
         """
-        super(GulpVideoDataset, self).__init__(
+        super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
         from gulpio import GulpDirectory
@@ -332,10 +332,10 @@ class GulpVideoDataset(VideoDataset):
             return self.transform(frames), label
         return torch.Tensor(frames), label
 
-    def _load_frames(self, id_: str, frame_idx: slice):
+    def _load_frames(self, id_: str, frame_idx: slice) -> np.ndarray:
         frames, _ = self.gulp_dir[id_, frame_idx]
         frames = np.moveaxis(frames, -1, 0)
-        return frames
+        return frames / 255
 
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]

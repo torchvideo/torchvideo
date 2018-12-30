@@ -26,6 +26,12 @@ class TestGulpVideoDataset:
     def test_video_id(self, gulp_dataset):
         assert gulp_dataset._video_ids[0] == "video0"
 
+    def test_video_range(self, gulp_dataset):
+        frames = gulp_dataset[0][0]
+
+        assert frames.min() >= 0
+        assert frames.max() <= 1
+
     def test_loads_all_frames_by_default(self, gulp_dataset):
         dataset = gulp_dataset
         frames, label = dataset[0]

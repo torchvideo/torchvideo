@@ -38,7 +38,7 @@ def lintel_loader(
     frames = np.frombuffer(frames_data, dtype=np.uint8)
     # TODO: Support 1 channel grayscale video
     frames = np.reshape(frames, newshape=(len(frames_idx), height, width, 3))
-    return torch.Tensor(np.moveaxis(frames, -1, 0))
+    return torch.Tensor(np.moveaxis(frames, -1, 0)).div_(255)
 
 
 def default_loader(

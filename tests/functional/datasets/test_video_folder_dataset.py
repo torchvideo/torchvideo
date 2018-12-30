@@ -23,6 +23,12 @@ class TestVideoFolderDataset:
     def test_dataset_length(self, video_folder_dataset):
         assert len(video_folder_dataset) == self.video_count
 
+    def test_video_range(self, video_folder_dataset):
+        frames = video_folder_dataset[0]
+
+        assert frames.min() >= 0
+        assert frames.max() <= 1
+
     def test_loads_all_frames_by_default(self, video_folder_dataset):
         dataset = video_folder_dataset
 

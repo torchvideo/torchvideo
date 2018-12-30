@@ -44,11 +44,10 @@ install:
   - conda info -a
 
   - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yml
-  - conda env create -n "torchvideo-$TRAVIS_PYTHON_VERSION" -f environment.tml
-  - source activate "torchvideo-$TRAVIS_PYTHON_VERSION"
-  - conda install -c conda-forge numpy ffmpeg av lintel opencv
-  - pip install -r dev-requirements.txt
-  - pip install codecov gulpio moviepy
+  - cat environment.yml
+  - conda env create -n torchvideo -f environment.tml
+  - source activate torchvideo
+  - pip install codecov
   - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;

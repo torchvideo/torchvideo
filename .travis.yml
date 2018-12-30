@@ -43,8 +43,9 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy pytorch torchvision -c pytorch
-  - source activate test-environment
+  - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yml
+  - conda env create -n "torchvideo-$TRAVIS_PYTHON_VERSION" -f environment.tml
+  - source activate "torchvideo-$TRAVIS_PYTHON_VERSION"
   - conda install -c conda-forge numpy ffmpeg av lintel opencv
   - pip install -r dev-requirements.txt
   - pip install codecov gulpio moviepy

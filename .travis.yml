@@ -45,7 +45,7 @@ install:
 
   - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yml
   - cat environment.yml
-  - conda env create -n torchvideo -f environment.tml
+  - conda env create -n torchvideo -f environment.yml
   - source activate torchvideo
   - pip install codecov
   - python setup.py install

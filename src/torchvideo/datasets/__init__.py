@@ -15,7 +15,10 @@ from torchvideo.transforms import PILVideoToTensor
 
 
 Label = Any
-Transform = Callable[[Iterator[Image]], torch.Tensor]
+
+Transform = Callable[[Any], torch.Tensor]
+PILVideoTransform = Callable[[Iterator[Image]], torch.Tensor]
+NDArrayVideoTransform = Callable[[np.ndarray], torch.Tensor]
 
 
 _default_sampler = FullVideoSampler
@@ -36,21 +39,6 @@ class LabelSet(ABC):  # pragma: no cover
             The corresponding label
         """
         raise NotImplementedError()
-
-
-class GulpLabelSet(LabelSet):
-    """LabelSet for GulpIO datasets where the label is contained within the metadata of
-    the gulp directory. Assuming you've written the label of each video to a field
-    called ``'label'`` in the metadata you can create a LabelSet like:
-    ``GulpLabelSet(gulp_dir.merged_meta_dict, label_field='label')``
-    """
-
-    def __init__(self, merged_meta_dict: Dict[str, Any], label_field: str = "label"):
-        self.merged_meta_dict = merged_meta_dict
-        self.label_field = label_field
-
-    def __getitem__(self, video_name: str) -> Label:
-        return self.merged_meta_dict[video_name][self.label_field]
 
 
 class VideoDataset(torch.utils.data.Dataset):
@@ -127,7 +115,7 @@ class ImageFolderVideoDataset(VideoDataset):
         filename_template: str,
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
-        transform: Optional[Transform] = None,
+        transform: Optional[PILVideoTransform] = None,
     ):
         """
 
@@ -207,7 +195,7 @@ class VideoFolderDataset(VideoDataset):
         root_path: Union[str, Path],
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
-        transform: Optional[Transform] = None,
+        transform: Optional[PILVideoTransform] = None,
     ) -> None:
         """
         Args:
@@ -272,24 +260,35 @@ class GulpVideoDataset(VideoDataset):
     def __init__(
         self,
         root_path: Union[str, Path],
+        label_field: Optional[str] = None,
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
-        transform: Optional[Transform] = None,
+        transform: Optional[NDArrayVideoTransform] = None,
     ):
         """
         Args:
             root_path: Path to GulpIO dataset folder on disk. The ``.gulp`` and
                 ``.gmeta`` files are direct children of this directory.
-            label_set: Optional label set for labelling examples
+            label_field: Meta data field name that stores the label of an example,
+                this is used to construct a :class:`GulpLabelSet` that performs the
+                example labelling. Defaults to ``'label'``.
+            label_set: Optional label set for labelling examples. This is mutually
+                exclusive with ``label_field``.
             sampler: Optional sampler for drawing frames from each video
-            transform: Optional transform over the list of frames
+            transform: Optional transform over the :class:`ndarray` with layout ``THWC``
         """
+        from gulpio import GulpDirectory
+
+        self.gulp_dir = GulpDirectory(str(root_path))
+        if label_field is None:
+            label_field = "label"
+        if label_set is None:
+            label_set = GulpLabelSet(
+                self.gulp_dir.merged_meta_dict, label_field=label_field
+            )
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
-        from gulpio import GulpDirectory
-
-        self.gulp_dir = GulpDirectory(str(self.root_path))
         self._video_ids = sorted(list(self.gulp_dir.merged_meta_dict.keys()))
 
     def __len__(self):
@@ -299,23 +298,20 @@ class GulpVideoDataset(VideoDataset):
         id_ = self._video_ids[index]
         frame_count = self._get_frame_count(id_)
         frame_idx = self.sampler.sample(frame_count)
-        meta = self.gulp_dir.merged_meta_dict[id_]["meta_data"][0]
-        label = meta["label"]
-        # TODO: Use self.transform if set
+        label = self.label_set[id_]
         if isinstance(frame_idx, slice):
             frames = self._load_frames(id_, frame_idx)
         elif isinstance(frame_idx, list):
             if isinstance(frame_idx[0], slice):
                 frames = np.concatenate(
-                    [self._load_frames(id_, slice_) for slice_ in frame_idx], axis=1
+                    [self._load_frames(id_, slice_) for slice_ in frame_idx]
                 )
             elif isinstance(frame_idx[0], int):
                 frames = np.concatenate(
                     [
                         self._load_frames(id_, slice(index, index + 1))
                         for index in frame_idx
-                    ],
-                    axis=1,
+                    ]
                 )
             else:
                 raise TypeError(
@@ -330,12 +326,11 @@ class GulpVideoDataset(VideoDataset):
 
         if self.transform is not None:
             return self.transform(frames), label
-        return torch.Tensor(frames), label
+        return torch.Tensor(np.rollaxis(frames, -1, 0)), label
 
     def _load_frames(self, id_: str, frame_idx: slice) -> np.ndarray:
         frames, _ = self.gulp_dir[id_, frame_idx]
-        frames = np.moveaxis(frames, -1, 0)
-        return frames / 255
+        return np.array(frames) / 255
 
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]
@@ -354,3 +349,23 @@ class DummyLabelSet(LabelSet):
 
     def __getitem__(self, video_name) -> Label:
         return self.label
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(label={!r})".format(self.label)
+
+
+class GulpLabelSet(LabelSet):
+    """LabelSet for GulpIO datasets where the label is contained within the metadata of
+    the gulp directory. Assuming you've written the label of each video to a field
+    called ``'label'`` in the metadata you can create a LabelSet like:
+    ``GulpLabelSet(gulp_dir.merged_meta_dict, label_field='label')``
+    """
+
+    def __init__(self, merged_meta_dict: Dict[str, Any], label_field: str = "label"):
+        self.merged_meta_dict = merged_meta_dict
+        self.label_field = label_field
+
+    def __getitem__(self, video_name: str) -> Label:
+        # The merged meta dict has the form: { video_id: { meta_data: [{ meta... }] }}
+        video_meta_data = self.merged_meta_dict[video_name]["meta_data"][0]
+        return video_meta_data[self.label_field]

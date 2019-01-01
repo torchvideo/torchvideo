@@ -42,7 +42,15 @@ torchvideo represents videos in a variety of formats:
 
 - PIL video: A list of a PIL Images, this is useful for applying image data
   augmentations
-- tensor video: A tensor of shape :math:`(C, T, H, W)` for feeding a network.
+- tensor video: A :class:`torch.Tensor` of shape :math:`(C, T, H, W)` for feeding a
+  network.
+- NDArray video: A :class:`numpy.ndarray` of shape either :math:`(T, H, W, C)` or
+  :math:`(C, T, H, W)`. The reason for the multiple channel shapes is that most
+  loaders load in :math:`(T, H, W, C)` format, however tensors formatted for input
+  into a network typically are formatted in :math:`(C, T, H, W)`. Permuting the
+  dimensions is a costly operation, so supporting both format allows for efficient
+  implementation of transforms without have to invert the conversion from one format
+  to the other.
 
 
 
@@ -114,4 +122,9 @@ CollectFrames
 PILVideoToTensor
 ~~~~~~~~~~~~~~~~
 .. autoclass:: PILVideoToTensor
+    :special-members: __call__
+
+NDArrayToPILVideo
+~~~~~~~~~~~~~~~~~
+.. autoclass:: NDArrayToPILVideo
     :special-members: __call__

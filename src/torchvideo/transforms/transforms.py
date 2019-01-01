@@ -1,4 +1,5 @@
 import numbers
+import numpy as np
 
 import PIL
 import random
@@ -526,6 +527,26 @@ class PILVideoToTensor:
         if isinstance(frames, Iterator):
             frames = list(frames)
         return torch.stack(list(map(F.to_tensor, frames))).transpose(1, 0)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "()"
+
+
+class NDArrayToPILVideo:
+    def __init__(self, format="thwc"):
+        if format not in {"thwc", "cthw"}:
+            raise ValueError(
+                "Invalid format {!r}, only 'thwc' and 'cthw' are "
+                "supported".format(format)
+            )
+        self.format = format
+
+    def __call__(self, frames: np.ndarray) -> Iterator[Image]:
+        if self.format == "cthw":
+            frames = np.moveaxis(frames, 0, -1)
+
+        for frame in frames:
+            yield PIL.Image.fromarray(frame)
 
     def __repr__(self):
         return self.__class__.__name__ + "()"

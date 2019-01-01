@@ -1,9 +1,13 @@
+import itertools
+
 import numpy as np
 from random import randint
 
+import pytest
 import torch
 from hypothesis import given, assume
 import hypothesis.strategies as st
+from torchvision.transforms import Compose
 
 from torchvideo.transforms import (
     RandomCropVideo,
@@ -12,8 +16,9 @@ from torchvideo.transforms import (
     CenterCropVideo,
     RandomHorizontalFlipVideo,
     NormalizeVideo,
+    NDArrayToPILVideo,
 )
-from unit.strategies import pil_video, tensor_video
+from unit.strategies import pil_video, tensor_video, video_shape
 
 
 class TestRandomCropVideo:
@@ -140,3 +145,50 @@ class TestPILVideoToTensor:
         assert tensor.size(1) == len(video)
         assert tensor.size(2) == height
         assert tensor.size(3) == width
+
+
+class TestNDArrayToPILVideo:
+    def test_repr(self):
+        assert repr(NDArrayToPILVideo()) == "NDArrayToPILVideo()"
+
+    @given(video_shape())
+    def test_converts_thwc_to_PIL_video(self, shape):
+        t, h, w = shape
+        video = self.make_uint8_ndarray((t, h, w, 3))
+        transform = Compose([NDArrayToPILVideo(), CollectFrames()])
+
+        pil_video = transform(video)
+
+        assert len(pil_video) == t
+        assert pil_video[0].size[0] == w
+        assert pil_video[0].size[1] == h
+        assert all([f.mode == "RGB" for f in pil_video])
+
+    @given(video_shape())
+    def test_converts_cthw_to_PIL_video(self, shape):
+        t, h, w = shape
+        video = self.make_uint8_ndarray((3, t, h, w))
+        transform = Compose([NDArrayToPILVideo(format="cthw"), CollectFrames()])
+
+        pil_video = transform(video)
+
+        assert len(pil_video) == t
+        assert pil_video[0].size[0] == w
+        assert pil_video[0].size[1] == h
+        assert all([f.mode == "RGB" for f in pil_video])
+
+    def test_only_thwc_and_cthw_are_valid_formats(self):
+        invalid_formats = [
+            "".join(f)
+            for f in itertools.permutations("thwc")
+            if "".join(f) not in {"thwc", "cthw"}
+        ]
+        for invalid_format in invalid_formats:
+            with pytest.raises(
+                ValueError, match="Invalid format '{}'".format(invalid_format)
+            ):
+                NDArrayToPILVideo(format=invalid_format)
+
+    @staticmethod
+    def make_uint8_ndarray(shape):
+        return np.random.randint(0, 255, size=shape, dtype=np.uint8)

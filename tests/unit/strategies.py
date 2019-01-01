@@ -18,7 +18,7 @@ def numpy_video(
     max_height=10,
     mode=None,
 ):
-    height, length, width = draw(
+    length, height, width = draw(
         video_shape(
             min_length, max_length, min_height, max_height, min_width, max_width
         )
@@ -96,9 +96,15 @@ def tensor_video(
 
 @st.composite
 def video_shape(
-    draw, min_length, max_length, min_height, max_height, min_width, max_width
+    draw,
+    min_length=1,
+    max_length=10,
+    min_height=1,
+    max_height=10,
+    min_width=1,
+    max_width=10,
 ):
     length = draw(st.integers(min_length, max_length))
     width = draw(st.integers(min_width, max_width))
     height = draw(st.integers(min_height, max_height))
-    return height, length, width
+    return length, height, width

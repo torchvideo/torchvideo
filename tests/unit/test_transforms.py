@@ -1,5 +1,6 @@
 import itertools
 
+import PIL.Image
 import numpy as np
 from random import randint
 
@@ -145,6 +146,26 @@ class TestPILVideoToTensor:
         assert tensor.size(1) == len(video)
         assert tensor.size(2) == height
         assert tensor.size(3) == width
+
+    def test_rescales_between_0_and_1(self):
+        transform = PILVideoToTensor()
+        frame_arr = 255 * np.ones(shape=(10, 20, 3), dtype=np.uint8)
+        frame_arr[0:5, 0:10, :] = 0
+        video = [PIL.Image.fromarray(frame_arr)]
+        tensor = transform(video)
+
+        assert tensor.min().item() == 0
+        assert tensor.max().item() == 1
+
+    def test_disabled_rescale(self):
+        transform = PILVideoToTensor(rescale=False)
+        frame_arr = 255 * np.ones(shape=(10, 20, 3), dtype=np.uint8)
+        frame_arr[0:5, 0:10, :] = 0
+        video = [PIL.Image.fromarray(frame_arr)]
+        tensor = transform(video)
+
+        assert tensor.min().item() == 0
+        assert tensor.max().item() == 255
 
 
 class TestNDArrayToPILVideo:

@@ -508,8 +508,16 @@ class CollectFrames:
 
 
 class PILVideoToTensor:
-    """Convert a list of PIL Images to a tensor (C, T, H, W)
-    """
+    """Convert a list of PIL Images to a tensor (C, T, H, W)"""
+
+    def __init__(self, rescale=True):
+        """
+
+        Args:
+            rescale: Whether or not to rescale video from [0, 255] to [0, 1]. If False
+                the tensor will be in range [0, 255].
+        """
+        self.rescale = rescale
 
     def __call__(self, frames: Union[Iterable[Image], Iterator[Image]]) -> torch.Tensor:
         """
@@ -517,7 +525,8 @@ class PILVideoToTensor:
             frames: Iterator/Iterable of frames
 
         Returns:
-            Tensor video :math:`(C, T, H, W)`
+            Tensor video :math:`(C, T, H, W)` in the range [0, 1] if self.rescale is
+                True, otherwise in the range [0, 255].
         """
 
         # PIL Images are in the format (H, W, C)
@@ -526,7 +535,12 @@ class PILVideoToTensor:
         # (T, C, H, W), we want to swap T and C to get (C, T, H, W)
         if isinstance(frames, Iterator):
             frames = list(frames)
-        return torch.stack(list(map(F.to_tensor, frames))).transpose(1, 0)
+        tensor = torch.stack(list(map(F.to_tensor, frames))).transpose(1, 0)
+        # torchvision.transforms.functional.to_tensor rescales by default, so if the
+        # rescaling is disabled we effectively have to invert the operation.
+        if not self.rescale:
+            tensor *= 255
+        return tensor
 
     def __repr__(self):
         return self.__class__.__name__ + "()"

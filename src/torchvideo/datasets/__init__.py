@@ -113,6 +113,7 @@ class ImageFolderVideoDataset(VideoDataset):
         self,
         root_path: Union[str, Path],
         filename_template: str,
+        filter: Optional[Callable[[Path], bool]] = None,
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
         transform: Optional[PILVideoTransform] = None,
@@ -130,7 +131,9 @@ class ImageFolderVideoDataset(VideoDataset):
             transform: Optional transform over the list of frames
         """
         super().__init__(root_path, label_set, sampler=sampler, transform=transform)
-        self.video_dirs = sorted(list(self.root_path.iterdir()))
+        self.video_dirs = sorted(
+            [d for d in self.root_path.iterdir() if filter is None or filter(d)]
+        )
         self.video_lengths = [
             len(list(video_dir.iterdir())) for video_dir in self.video_dirs
         ]
@@ -193,6 +196,7 @@ class VideoFolderDataset(VideoDataset):
     def __init__(
         self,
         root_path: Union[str, Path],
+        filter: Optional[Callable[[Path], bool]] = None,
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
         transform: Optional[PILVideoTransform] = None,
@@ -209,7 +213,11 @@ class VideoFolderDataset(VideoDataset):
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
         self.video_paths = sorted(
-            [child for child in self.root_path.iterdir() if _is_video_file(child)]
+            [
+                child
+                for child in self.root_path.iterdir()
+                if _is_video_file(child) and (filter is None or filter(child))
+            ]
         )
         self.video_lengths = [
             _get_videofile_frame_count(vid_path) for vid_path in self.video_paths
@@ -275,7 +283,9 @@ class GulpVideoDataset(VideoDataset):
             label_set: Optional label set for labelling examples. This is mutually
                 exclusive with ``label_field``.
             sampler: Optional sampler for drawing frames from each video
-            transform: Optional transform over the :class:`ndarray` with layout ``THWC``
+            transform: Optional transform over the :class:`ndarray` with layout
+                ``THWC``. Note you'll probably want to remap the channels to ``CTHW`` at
+                the end of this transform.
         """
         from gulpio import GulpDirectory
 

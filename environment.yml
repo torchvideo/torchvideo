@@ -17,6 +17,7 @@ dependencies:
     - hypothesis==3.84.3
     - pytest==4.0.2
     - pytest-cov==2.6.0
+    - pyfakefs==3.5.5
     - moviepy==0.2.3.5
     - gulpio==531.53
     - sphinx==1.8.3

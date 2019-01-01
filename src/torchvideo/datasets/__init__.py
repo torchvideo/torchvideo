@@ -268,6 +268,7 @@ class GulpVideoDataset(VideoDataset):
     def __init__(
         self,
         root_path: Union[str, Path],
+        filter: Optional[Callable[[str], bool]] = None,
         label_field: Optional[str] = None,
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
@@ -277,6 +278,9 @@ class GulpVideoDataset(VideoDataset):
         Args:
             root_path: Path to GulpIO dataset folder on disk. The ``.gulp`` and
                 ``.gmeta`` files are direct children of this directory.
+            filter: Filter function that determines whether a video is included into
+                the dataset. The filter is called on each video id, and should return
+                True to include the video, and false to exclude it.
             label_field: Meta data field name that stores the label of an example,
                 this is used to construct a :class:`GulpLabelSet` that performs the
                 example labelling. Defaults to ``'label'``.
@@ -299,7 +303,13 @@ class GulpVideoDataset(VideoDataset):
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
-        self._video_ids = sorted(list(self.gulp_dir.merged_meta_dict.keys()))
+        self._video_ids = sorted(
+            [
+                id_
+                for id_ in self.gulp_dir.merged_meta_dict.keys()
+                if filter is None or filter(id_)
+            ]
+        )
 
     def __len__(self):
         return len(self._video_ids)

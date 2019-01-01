@@ -72,3 +72,14 @@ class TestGulpVideoDataset:
 
         frames_shape = frames.size()
         assert frames_shape == (3, len(frames_idx), *self.size)
+
+    def test_filtering_videos(self, gulp_dir):
+        video_ids = {"video1", "video2", "video3"}
+
+        def filter(video_id: str):
+            return video_id in video_ids
+
+        dataset = GulpVideoDataset(gulp_dir, filter=filter)
+
+        assert len(dataset) == 3
+        assert set(dataset._video_ids) == video_ids

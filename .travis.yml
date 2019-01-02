@@ -44,11 +44,6 @@ install:
   - conda info -a
 
   - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yml
-  # conda-forge only 3.6 builds for lintel which causes depedency
-  # conflicts.
-  - if [[ "$TRAVIS_PYTHON_VERSION" != "3.6" ]]; then
-      sed -i '/lintel/d' environment.yml;
-    fi
   - cat environment.yml
   - conda env create -n torchvideo -f environment.yml
   - source activate torchvideo

@@ -16,10 +16,6 @@ matrix:
       install: pip install flake8
       script: flake8
 
-    - python: "3.5"
-      #    - python: "3.5"
-      #      env: IMAGE_BACKEND=Pillow-SIMD
-
     - python: "3.6"
       #    - python: "3.6"
       #      env: IMAGE_BACKEND=Pillow-SIMD
@@ -47,13 +43,6 @@ install:
   - cat environment.yml
   - conda env create -n torchvideo -f environment.yml
   - source activate torchvideo
-  - if [[ "$TRAVIS_PYTHON_VERSION" != "3.6" ]]; then
-      pushd $HOME;
-      git clone https://github.com/dukebw/lintel.git;
-      cd lintel;
-      pip3 install .;
-      popd;
-    fi
   - pip install codecov
   - python setup.py install
   - if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then

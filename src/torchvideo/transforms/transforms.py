@@ -583,3 +583,21 @@ class TimeApply:
     ) -> Iterator[Image]:
         for frame in frames:
             yield self.img_transform(frame)
+
+
+class TimeToChannel:
+    def __call__(self, frames: torch.Tensor) -> torch.Tensor:
+        """Reshape video tensor of shape :math:`(C, T, H, W)` into
+        :math:`(C \times T, H, W)`
+
+        Args:
+            frames: Tensor video of size :math:`(C, T, H, W)`
+
+        Returns:
+            Tensor of shape :math:`(T \times C, H, W)`
+
+        """
+        return VF.time_to_channel(frames)
+
+    def __repr__(self):
+        return self.__class__.__name__ + "()"

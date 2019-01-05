@@ -6,7 +6,7 @@ from random import randint
 
 import pytest
 import torch
-from hypothesis import given, assume
+from hypothesis import given, assume, note
 import hypothesis.strategies as st
 from torchvision.transforms import Compose
 
@@ -18,8 +18,18 @@ from torchvideo.transforms import (
     RandomHorizontalFlipVideo,
     NormalizeVideo,
     NDArrayToPILVideo,
+    TimeToChannel,
 )
 from unit.strategies import pil_video, tensor_video, video_shape
+
+
+def prod(seq):
+    if len(seq) == 0:
+        raise ValueError("Expected sequence to have at least 1 element")
+    product = seq[0]
+    for el in seq[1:]:
+        product *= el
+    return product
 
 
 class TestRandomCropVideo:
@@ -213,3 +223,32 @@ class TestNDArrayToPILVideo:
     @staticmethod
     def make_uint8_ndarray(shape):
         return np.random.randint(0, 255, size=shape, dtype=np.uint8)
+
+
+class TestTimeToChannel:
+    transform = TimeToChannel()
+
+    def test_repr(self):
+        assert repr(TimeToChannel()) == "TimeToChannel()"
+
+    def test_reshaping(self):
+        frames = torch.zeros((10, 5, 36, 24))
+
+        transformed_frames_shape = self.transform(frames).size()
+
+        assert (50, 36, 24) == transformed_frames_shape
+
+    @given(tensor_video())
+    def test_element_count_is_preserved(self, frames):
+        transformed_frames_size = self.transform(frames).size()
+
+        frames_size = frames.size()
+        note(frames_size)
+        note(transformed_frames_size)
+        assert prod(transformed_frames_size) == prod(frames_size)
+
+    @given(tensor_video())
+    def test_first_dim_is_always_larger(self, frames):
+        transformed_frames_size = self.transform(frames)
+
+        assert frames.size(0) <= transformed_frames_size.size(0)

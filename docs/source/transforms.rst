@@ -34,6 +34,24 @@ transforms followed by a :class:`CollectFrames` transform and a
     ])
 
 
+Optical flow stored as flattened :math:`(u, v)` pairs like
+:math:`(u_0, v_1, u_1, v_1, \ldots, u_n, v_n)` that are then stacked into the channel
+ dimension would be dealt with like so:
+
+.. code-block:: python
+
+    import torchvideo.transforms as VT
+    import torchvision.transforms as IT
+    from torchvision.transforms import Compose
+
+    transform = Compose([
+        VT.CenterCropVideo((224, 224)),  # (h, w)
+        VT.CollectFrames(),
+        VT.PILVideoToTensor(),
+        VT.TimeToChannel()
+    ])
+
+
 
 Video Datatypes
 ---------------
@@ -99,7 +117,6 @@ TimeApply
     :special-members: __call__
 
 
-
 Transforms on Torch.\*Tensor videos
 -----------------------------------
 
@@ -110,6 +127,10 @@ NormalizeVideo
 .. autoclass:: NormalizeVideo
     :special-members: __call__
 
+TimeToChannel
+~~~~~~~~~~~~~
+.. autoclass:: TimeToChannel
+    :special-members: __call__
 
 Conversion transforms
 ---------------------

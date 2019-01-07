@@ -23,7 +23,7 @@ class FrameSampler(ABC):  # pragma: no cover
 
 
 class FullVideoSampler(FrameSampler):
-    """FrameSampler that samples all frames in a video
+    """Sample all frames in a video.
 
     Args:
         frame_step: The step size between frames, this controls FPS reduction, a step
@@ -37,7 +37,7 @@ class FullVideoSampler(FrameSampler):
         """
 
         Args:
-            video_length: The duration in frames of the video to be sampled from
+            video_length: The duration in frames of the video to be sampled from.
 
         Returns:
             ``slice`` from ``0`` to ``video_length`` with step size ``frame_step``
@@ -93,19 +93,27 @@ class ClipSampler(FrameSampler):
 
 
 class TemporalSegmentSampler(FrameSampler):
-    """FrameSampler that implements the sampling style originated in [TSN]_
+    """[TSN]_ style sampling.
 
-    The video is equally divided into a number of segments, and from within each segment
-    a contiguous sequence of frames ``segment_length`` long is sampled.
+    The video is equally divided into a number of segments, ``segment_count`` and from
+    within each segment a contiguous sequence of frames ``segment_length`` long is
+    sampled.
 
     [TSN]_ Uses the following configurations:
 
-    * Training
-        * RGB network: ``segment_count``: 3, ``segment_length``: 1
-        * Flow network: ``segment_count``: 3, ``segment_length``: 5
-    * Testing
-        * RGB network: ``segment_count``: 25, ``segment_length``: 1
-        * Flow network: ``segment_count``: 25, ``segment_length``: 1
+    +---------+------------+-------------------+--------------------+
+    | Network | Train/Test | ``segment_count`` | ``segment_length`` |
+    +=========+============+===================+====================+
+    | RGB     | Train      | 3                 | 1                  |
+    +         +------------+-------------------+--------------------+
+    |         | Test       | 25                | 1                  |
+    +---------+------------+-------------------+--------------------+
+    | Flow    | Train      | 3                 | 5                  |
+    +         +------------+-------------------+--------------------+
+    |         | Test       | 25                | 5                  |
+    +---------+------------+-------------------+--------------------+
+
+
     """
 
     def __init__(self, segment_count, segment_length):

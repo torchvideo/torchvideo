@@ -17,7 +17,7 @@ ImageShape = namedtuple("ImageSize", ["height", "width"])
 
 
 class RandomCropVideo:
-    """Crop the given PIL Image at a random location.
+    """Crop the given PIL Video at a random location.
 
     Args:
         size: Desired output size of the crop. If size is an
@@ -591,14 +591,14 @@ class TimeApply:
 
 class TimeToChannel:
     def __call__(self, frames: torch.Tensor) -> torch.Tensor:
-        """Reshape video tensor of shape :math:`(C, T, H, W)` into
-        :math:`(C \times T, H, W)`
+        r"""Reshape video tensor of shape :math:`(C, T, H, W)` into
+        :math:`(C, T, H, W)`
 
         Args:
             frames: Tensor video of size :math:`(C, T, H, W)`
 
         Returns:
-            Tensor of shape :math:`(T \times C, H, W)`
+            Tensor of shape :math:`(T, C, H, W)`
 
         """
         return VF.time_to_channel(frames)

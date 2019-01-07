@@ -72,31 +72,31 @@ class RandomCropVideo:
         except AttributeError:
             pass
 
-        frame = self.maybe_pad(next(frames))
+        frame = self._maybe_pad(next(frames))
         i, j, h, w = T.RandomCrop.get_params(frame, self.size)
 
-        yield self._transform_img(frame, i, j, h, w)
+        yield F.crop(frame, i, j, h, w)
         for frame in frames:
             yield self._transform_img(frame, i, j, h, w)
 
     def _transform_img(self, frame: Image, i: int, j: int, h: int, w: int) -> Image:
-        frame = self.maybe_pad(frame)
+        return F.crop(self._maybe_pad(frame), i, j, h, w)
 
-        return F.crop(frame, i, j, h, w)
-
-    def maybe_pad(self, frame):
+    def _maybe_pad(self, frame: Image):
         if self.padding is not None:
             frame = F.pad(frame, self.padding, self.fill, self.padding_mode)
         # pad the width if needed
-        if self.pad_if_needed and frame.size[0] < self.size[1]:
-            frame = F.pad(
-                frame, (self.size[1] - frame.size[0], 0), self.fill, self.padding_mode
-            )
+        frame_width = frame.size[0]
+        desired_width = self.size[1]
+        if self.pad_if_needed and frame_width < desired_width:
+            horizontal_padding = desired_width - frame_width
+            frame = F.pad(frame, (horizontal_padding, 0), self.fill, self.padding_mode)
         # pad the height if needed
-        if self.pad_if_needed and frame.size[1] < self.size[0]:
-            frame = F.pad(
-                frame, (0, self.size[0] - frame.size[1]), self.fill, self.padding_mode
-            )
+        frame_height = frame.size[1]
+        desired_height = self.size[0]
+        if self.pad_if_needed and frame_height < desired_height:
+            vertical_padding = desired_height - frame_height
+            frame = F.pad(frame, (0, vertical_padding), self.fill, self.padding_mode)
         return frame
 
     def __repr__(self) -> str:

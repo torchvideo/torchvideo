@@ -3,7 +3,7 @@ import numpy as np
 
 import PIL
 import random
-from typing import List, Tuple, Union, Sequence, Callable, Iterator, Iterable
+from typing import List, Tuple, Union, Sequence, Callable, Iterator, Iterable, Optional
 
 import torch
 from PIL.Image import Image
@@ -17,40 +17,41 @@ ImageShape = namedtuple("ImageSize", ["height", "width"])
 
 
 class RandomCropVideo:
-    """Crop the given PIL Video at a random location.
+    """Crop the given Video (composed of PIL Images) at a random location.
 
     Args:
-        size: Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
+        size: Desired output size of the crop. If ``size`` is an
+            int instead of sequence like ``(h, w)``, a square crop ``(size, size)`` is
             made.
         padding: Optional padding on each border
-            of the image. Default is None, i.e no padding. If a sequence of length
+            of the image. Default is ``None``, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
             respectively. If a sequence of length 2 is provided, it is used to
             pad left/right, top/bottom borders, respectively.
-        pad_if_needed: It will pad the image if smaller than the
+        pad_if_needed: Whether to pad the image if smaller than the
             desired size to avoid raising an exception.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill: Pixel fill value for constant fill. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric.
-         Default is constant.
+            This value is only used when the ``padding_mode`` is ``'constant'``.
+        padding_mode: Type of padding. Should be one of: ``'constant'``, ``'edge'``,
+            ``'reflect'`` or ``'symmetric'``.
 
-             - constant: pads with a constant value, this value is specified with fill
-             - edge: pads with the last value on the edge of the image
-             - reflect: pads with reflection of image (without repeating the last value
-                 on the edge) padding [1, 2, 3, 4] with 2 elements on both sides in
-                 reflect mode will result in [3, 2, 1, 2, 3, 4, 3, 2]
-             - symmetric: pads with reflection of image (repeating the last value on
-                 the edge) padding [1, 2, 3, 4] with 2 elements on both sides in
-                 symmetric mode will result in [2, 1, 1, 2, 3, 4, 4, 3]
+             - ``'constant'``: pads with a constant value, this value is specified with
+               fill
+             - ``'edge'``: pads with the last value on the edge of the image
+             - ``'reflect'``: pads with reflection of image (without repeating the last
+               value on the edge) padding ``[1, 2, 3, 4]`` with 2 elements on both sides
+                in reflect mode will result in ``[3, 2, 1, 2, 3, 4, 3, 2]``.
+             - ``'symmetric'``: pads with reflection of image (repeating the last value
+               on the edge) padding ``[1, 2, 3, 4]`` with 2 elements on both sides in
+               symmetric mode will result in ``[2, 1, 1, 2, 3, 4, 4, 3]``.
 
     """
 
     def __init__(
         self,
         size: Union[Tuple[int, int], int],
-        padding: Union[Tuple[int, int, int, int], Tuple[int, int]] = None,
+        padding: Optional[Union[Tuple[int, int, int, int], Tuple[int, int]]] = None,
         pad_if_needed: bool = False,
         fill: int = 0,
         padding_mode: str = "constant",
@@ -114,12 +115,12 @@ class RandomCropVideo:
 
 
 class CenterCropVideo:
-    """Crops the given video (composed of PIL Images) at the center.
+    """Crops the given video (composed of PIL Images) at the center of the frame.
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            ``int`` instead of sequence like ``(h, w)``, a square crop ``(size, size)``
+            is made.
     """
 
     def __init__(self, size: Union[Tuple[int, int], int]):
@@ -135,10 +136,10 @@ class CenterCropVideo:
 
 class RandomHorizontalFlipVideo:
     """Horizontally flip the given video (composed of PIL Images) randomly with a given
-    probability.
+    probability :math:`p`.
 
     Args:
-        p (float): probability of the image being flipped. Default value is 0.5
+        p (float): probability of the image being flipped.
     """
 
     def __init__(self, p=0.5):
@@ -162,20 +163,21 @@ class RandomHorizontalFlipVideo:
 
 
 class NormalizeVideo:
-    """Normalize a tensor video with mean and standard deviation.
-    Given mean: :math:`(M_1, \\ldots, M_n)` and std: :math:`(S_1, \\ldots, S_n)` for
-    :math:`n` channels, this transform will normalize each channel of the input
-    ``torch.*Tensor`` i.e.
-    ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
+    r"""
 
-    .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+    Normalise ``torch.*Tensor`` :math:`t` given mean:
+    :math:`M = (\mu_1, \ldots, \mu_n)`
+    and std:
+    :math:`\Sigma = (\sigma_1, \ldots, \sigma_n)`:
+    :math:`t'_c = \frac{t_c - M_c}{\Sigma_c}`
 
     Args:
         mean: Sequence of means for each channel, or a single mean applying to all
             channels.
         std: Sequence of standard deviations for each channel, or a single standard
             deviation applying to all channels.
+        inplace: Whether or not to perform the operation in place without allocating
+            a new tensor.
     """
 
     def __init__(
@@ -193,13 +195,6 @@ class NormalizeVideo:
             raise ValueError("std {} contained 0 value, cannot be 0".format(std))
 
     def __call__(self, frames: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            frames: Tensor video of size (C, T, H, W) to be normalized.
-
-        Returns:
-            Normalized Tensor video.
-        """
         channel_count = frames.shape[0]
         mean = self._broadcast_to_seq(self.mean, channel_count)
         std = self._broadcast_to_seq(self.std, channel_count)
@@ -225,12 +220,13 @@ class ResizeVideo:
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
-            (h, w), output size will be matched to this. If size is an int,
+            ``(h, w)``, output size will be matched to this. If size is an ``int``,
             smaller edge of the image will be matched to this number.
-            i.e, if height > width, then image will be rescaled to
-            (size * height / width, size)
+            i.e, if ``height > width``, then image will be rescaled to
+            ``(size * height / width, size)``.
         interpolation (int, optional): Desired interpolation. Default is
-            ``PIL.Image.BILINEAR``
+            :py:const:`PIL.Image.BILINEAR` (see :py:meth:`PIL.Image.Image.resize` for
+            other options).
     """
 
     def __init__(
@@ -240,44 +236,43 @@ class ResizeVideo:
         self.interpolation = interpolation
 
     def __call__(self, frames: Iterator[Image]) -> Iterator[Image]:
-        """
-        Args:
-            frames: Video frames to be scaled.
-        Returns:
-            Rescaled video.
-        """
         for frame in frames:
             yield F.resize(frame, self.size, self.interpolation)
 
     def __repr__(self):
         interpolate_str = T._pil_interpolation_to_str[self.interpolation]
-        return self.__class__.__name__ + "(size={0}, interpolation={1})".format(
+        return self.__class__.__name__ + "(size={0!r}, interpolation={1})".format(
             self.size, interpolate_str
         )
 
 
-class MultiScaleCropVideo(object):
-    """Random crop at one of the given scales, then resize to specified size.
+class MultiScaleCropVideo:
+    r"""Random crop the input video (composed of PIL Images) at one of the given
+    scales or from a set of fixed crops, then resize to specified size.
+
+
 
     Args:
         size (sequence or int): Desired output size. If size is an
-            int instead of sequence like (w, h), a square image (size, size) is
+            int instead of sequence like ``(w, h)``, a square image ``(size, size)`` is
             made.
-        scales (sequence): A sequence of floats between 0--1 indicating the scale of
-            the crop to be made.
-        max_distortion (int): Integer between 0--len(scales)
-            that controls which scales will be combined together, a max distortion of 0
-            means that crop width/height have to be from the same scale, whereas a
-            distortion of 1 means that the crop width/height can be from 1 scale apart
-            etc.
-        fixed_crops (bool): Whether to add upper right, upper left, lower right,
-            lower left and center crop positions to the list of candidate crop positions
-            that are randomly selected
+        scales (sequence): A sequence of floats between in the range :math:`[0, 1]`
+            indicating the scale of the crop to be made.
+        max_distortion (int): Integer between 0--``len(scales)`` that controls
+            aspect-ratio distortion. This parameters decides which scales will be
+            combined together when creating crop boxes. A max distortion of ``0``
+            means that the crop width/height have to be from the same scale, whereas a
+            distortion of 1 means that the crop width/height can be from 1 scale
+            before or ahead in the ``scales`` sequence thereby stretching or squishing
+            the frame.
+        fixed_crops (bool): Whether to use upper right, upper left, lower right,
+            lower left and center crop positions as the list of candidate crop positions
+            instead of those generated from ``scales`` and ``max_distortion``.
         more_fixed_crops (bool): Whether to add center left, center right, upper center,
             lower center, upper quarter left, upper quarter right, lower quarter left,
             lower quarter right crop positions to the list of candidate crop
-            positions that are randomly selected. fixed_crops must be enabled to use
-            this feature
+            positions that are randomly selected. ``fixed_crops`` must be enabled to use
+            this setting.
     """
 
     def __init__(
@@ -434,23 +429,24 @@ class MultiScaleCropVideo(object):
 class RandomResizedCropVideo:
     """Crop the given video (composed of PIL Images) to random size and aspect ratio.
 
-    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
-    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made.
-    This crop is finally resized to given size.
-    This is popularly used to train the Inception networks.
+    A crop of random scale (default: :math:`[0.08, 1.0]`) of the original size and a
+    random scale (default: :math:`[3/4, 4/3]`) of the original aspect ratio is
+    made. This crop is finally resized to given size. This is popularly used to train
+    the Inception networks.
 
     Args:
-        size: expected output size of each edge
-        scale: range of size of the origin size cropped
-        ratio: range of aspect ratio of the origin aspect ratio cropped
-        interpolation: Default: PIL.Image.BILINEAR
+        size: expected output size of each edge.
+        scale: range of size of the origin size cropped.
+        ratio: range of aspect ratio of the origin aspect ratio cropped.
+        interpolation: Default: :py:const:`PIL.Image.BILINEAR` (see
+            :py:meth:`PIL.Image.Image.resize` for other options).
     """
 
     def __init__(
         self,
         size: Union[Tuple[int, int], int],
-        scale: Tuple[int, int] = (0.08, 1.0),
-        ratio: Tuple[int, int] = (3.0 / 4.0, 4.0 / 3.0),
+        scale: Tuple[float, float] = (0.08, 1.0),
+        ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation=PIL.Image.BILINEAR,
     ):
         if isinstance(size, numbers.Number):
@@ -494,17 +490,10 @@ class RandomResizedCropVideo:
 class CollectFrames:
     """Collect frames from iterator into list.
 
-    Used at the end of a sequence of video transformations
+    Used at the end of a sequence of PIL video transformations.
     """
 
     def __call__(self, frames: Iterator[Image]) -> List[Image]:
-        """
-        Args:
-            frames: Iterator yielding frames
-
-        Returns:
-            Frames collected from iterator into list
-        """
         return list(frames)
 
     def __repr__(self):
@@ -512,27 +501,18 @@ class CollectFrames:
 
 
 class PILVideoToTensor:
-    """Convert a list of PIL Images to a tensor (C, T, H, W)"""
+    r"""Convert a list of PIL Images to a tensor :math:`(C, T, H, W)`."""
 
     def __init__(self, rescale=True):
         """
-
         Args:
-            rescale: Whether or not to rescale video from [0, 255] to [0, 1]. If False
-                the tensor will be in range [0, 255].
+            rescale: Whether or not to rescale video from :math:`[0, 255]` to
+                :math:`[0, 1]`. If ``False`` the tensor will be in range
+                :math:`[0, 255]`.
         """
         self.rescale = rescale
 
     def __call__(self, frames: Union[Iterable[Image], Iterator[Image]]) -> torch.Tensor:
-        """
-        Args:
-            frames: Iterator/Iterable of frames
-
-        Returns:
-            Tensor video :math:`(C, T, H, W)` in the range [0, 1] if self.rescale is
-                True, otherwise in the range [0, 255].
-        """
-
         # PIL Images are in the format (H, W, C)
         # F.to_tensor converts (H, W, C) to (C, H, W)
         # Since we have a list of these tensors, when we stack them we get shape
@@ -551,8 +531,17 @@ class PILVideoToTensor:
 
 
 class NDArrayToPILVideo:
+    """Convert :py:class:`numpy.ndarray` of the format :math:`(T, H, W, C)` or :math:`(
+    C, T, H, W)` to a PIL video (an iterator of PIL images)
+    """
+
     def __init__(self, format="thwc"):
-        if format not in {"thwc", "cthw"}:
+        """
+
+        Args:
+            format: dimensional layout of array, one of ``"thwc"`` or ``"cthw"``
+        """
+        if format.lower() not in {"thwc", "cthw"}:
             raise ValueError(
                 "Invalid format {!r}, only 'thwc' and 'cthw' are "
                 "supported".format(format)
@@ -567,19 +556,26 @@ class NDArrayToPILVideo:
             yield PIL.Image.fromarray(frame)
 
     def __repr__(self):
-        return self.__class__.__name__ + "()"
+        return self.__class__.__name__ + "(format={!r})".format(self.format)
 
 
 class TimeApply:
-    """Apply a PIL Image transform across time
+    """Apply a PIL Image transform across time.
 
-    .. warning:: You should only use this for deterministic image transforms. Using a
-        transform like :class:`torchvision.transforms.RandomCrop` will randomly crop
-        each individual frame at a different location producing a nonsensical video.
+    See :std:doc:`torchvision/transforms` for suitable *deterministic*
+    transforms to use with meta-transform.
+
+    .. warning:: You should only use this with deterministic image transforms. Using a
+       transform like :class:`torchvision.transforms.RandomCrop` will randomly crop
+       each individual frame at a different location producing a nonsensical video.
 
     """
 
     def __init__(self, img_transform: Callable[[Image], Image]) -> None:
+        """
+        Args:
+            img_transform: Image transform operating on a PIL Image.
+        """
         self.img_transform = img_transform
 
     def __call__(
@@ -590,17 +586,11 @@ class TimeApply:
 
 
 class TimeToChannel:
+    r"""Combine time dimension into the channel dimension by reshaping video tensor of
+    shape :math:`(C, T, H, W)` into :math:`(C \times T, H, W)`
+    """
+
     def __call__(self, frames: torch.Tensor) -> torch.Tensor:
-        r"""Reshape video tensor of shape :math:`(C, T, H, W)` into
-        :math:`(C, T, H, W)`
-
-        Args:
-            frames: Tensor video of size :math:`(C, T, H, W)`
-
-        Returns:
-            Tensor of shape :math:`(T, C, H, W)`
-
-        """
         return VF.time_to_channel(frames)
 
     def __repr__(self):

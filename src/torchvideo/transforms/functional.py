@@ -5,22 +5,22 @@ import torch
 
 def normalize(
     tensor: torch.Tensor, mean: Sequence, std: Sequence, inplace: bool = False
-):
-    """Normalize a tensor video with mean and standard deviation
-
-    .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+) -> torch.Tensor:
+    r"""Channel-wise normalize a tensor video of shape :math:`(C, T, H, W)` with mean
+    and standard deviation
 
     See :class:`~torchvideo.transforms.NormalizeVideo` for more details.
 
     Args:
         tensor: Tensor video of size :math:`(C, T, H, W)` to be normalized.
-        mean: Sequence of means for each channel :math:`c`
-        std: Sequence of standard deviations for each channel :math:`c`.
+        mean: Sequence of means, :math:`M`, for each channel :math:`c`.
+        std: Sequence of standard deviations, :math:`\Sigma`, for each channel
+            :math:`c`.
         inplace: Whether to normalise the tensor without cloning or not.
 
     Returns:
-        Tensor: Normalised Tensor video.
+        Channel-wise normalised tensor video,
+        :math:`t'_c = \frac{t_c - M_c}{\Sigma_c}`
 
     """
     channel_count = tensor.shape[0]
@@ -41,15 +41,15 @@ def normalize(
     return tensor
 
 
-def time_to_channel(tensor: torch.Tensor):
-    """Reshape video tensor of shape :math:`(C, T, H, W)` into
+def time_to_channel(tensor: torch.Tensor) -> torch.Tensor:
+    r"""Reshape video tensor of shape :math:`(C, T, H, W)` into
     :math:`(C \times T, H, W)`
 
     Args:
         tensor: Tensor video of size :math:`(C, T, H, W)`
 
     Returns:
-        Tensor of shape :math:`(T \times C, H, W)`
+        Tensor of shape :math:`(C \times T, H, W)`
 
     """
     tensor_ndim = len(tensor.size())

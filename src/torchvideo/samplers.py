@@ -11,16 +11,13 @@ class FrameSampler(ABC):  # pragma: no cover
     If you are creating your own sampler, you should inherit from this base class."""
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
-        """Generate frame indices to sample from a video.
+        """Generate frame indices to sample from a video of ``video_length`` frames.
 
         Args:
             video_length: The duration in frames of the video to be sampled from
 
         Returns:
-            One of:
-              - A slice representing a contiguous chunk of frames
-              - A list of frame indices
-              - A list of slices representing a set of contiguous chunks of frames
+            Frame indices
         """
         raise NotImplementedError()
 
@@ -29,8 +26,8 @@ class FullVideoSampler(FrameSampler):
     """FrameSampler that samples all frames in a video
 
     Args:
-        frame_step: The step size between frames, this controls FPS reduction,
-        a step size of 2 will halve FPS, step size of 3 will reduce FPS to 1/3.
+        frame_step: The step size between frames, this controls FPS reduction, a step
+            size of 2 will halve FPS, step size of 3 will reduce FPS to 1/3.
     """
 
     def __init__(self, frame_step=1):
@@ -43,7 +40,7 @@ class FullVideoSampler(FrameSampler):
             video_length: The duration in frames of the video to be sampled from
 
         Returns:
-            slice from ``0`` to ``video_length`` with step size ``frame_step``
+            ``slice`` from ``0`` to ``video_length`` with step size ``frame_step``
         """
         if video_length <= 0:
             raise ValueError(
@@ -61,30 +58,38 @@ class FullVideoSampler(FrameSampler):
 
 
 class ClipSampler(FrameSampler):
-    """Sample clips of a fixed duration uniformly randomly from a video.
-    """
+    """Sample clips of a fixed duration uniformly randomly from a video."""
 
-    def __init__(self, clip_length: int):
+    def __init__(self, clip_length: int, frame_step: int = 1):
         """
         Args:
             clip_length: Duration of clip in frames
+            frame_step: The step size between frames, this controls FPS reduction, a
+                step size of 2 will halve FPS, step size of 3 will reduce FPS to 1/3.
         """
         self.clip_length = clip_length
+        self.frame_step = frame_step
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
-        if video_length < self.clip_length:
+        if video_length < self.clip_length * self.frame_step:
             raise ValueError(
                 "Video ({} frames) is shorter than clip ({} frames)".format(
                     video_length, self.clip_length
                 )
             )
-        max_offset = video_length - self.clip_length
+        max_offset = video_length - self.clip_length * self.frame_step
 
         start_index = 0 if max_offset == 0 else randint(0, max_offset)
-        return slice(start_index, start_index + self.clip_length, 1)
+        return slice(
+            start_index,
+            start_index + self.clip_length * self.frame_step,
+            self.frame_step,
+        )
 
     def __repr__(self):
-        return self.__class__.__name__ + "(clip_length={})".format(self.clip_length)
+        return self.__class__.__name__ + "(clip_length={!r}, frame_step={!r})".format(
+            self.clip_length, self.frame_step
+        )
 
 
 class TemporalSegmentSampler(FrameSampler):

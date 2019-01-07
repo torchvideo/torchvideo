@@ -46,16 +46,19 @@ class TestFrameSampler:
 
 
 class TestClipSampler:
-    @given(st.integers(1, 100), st.integers(1, 100))
-    def test_clip_sampler_produces_frame_idx_of_given_length(
-        self, video_length, clip_length
+    @given(st.integers(1, 100), st.integers(1, 100), st.integers(1, 5))
+    def test_produces_frame_idx_of_given_length(
+        self, video_length, clip_length, step_size
     ):
-        assume(video_length >= clip_length)
-        sampler = ClipSampler(clip_length)
+        assume(video_length >= clip_length * step_size)
+        sampler = ClipSampler(clip_length, step_size)
 
         frame_idx = sampler.sample(video_length)
 
-        assert len(frame_idx_to_list(frame_idx)) == clip_length
+        frame_idx = frame_idx_to_list(frame_idx)
+        assert len(frame_idx) == clip_length
+        assert all([index < video_length for index in frame_idx])
+        assert all([index >= 0 for index in frame_idx])
 
     def test_repr(self):
-        assert repr(ClipSampler(10)) == "ClipSampler(clip_length=10)"
+        assert repr(ClipSampler(10)) == "ClipSampler(clip_length=10, frame_step=1)"

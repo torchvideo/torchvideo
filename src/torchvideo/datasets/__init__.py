@@ -42,10 +42,8 @@ class LabelSet(ABC):  # pragma: no cover
 
 
 class VideoDataset(torch.utils.data.Dataset):
-    """Abstract base class that all ``VideoDatasets`` inherit from
-
-    If you are implementing your own ``VideoDataset``, you should inherit from this
-    class.
+    """Abstract base class that all ``VideoDatasets`` inherit from. If you are
+    implementing your own ``VideoDataset``, you should inherit from this class.
     """
 
     def __init__(
@@ -58,10 +56,10 @@ class VideoDataset(torch.utils.data.Dataset):
         """
 
         Args:
-            root_path: Path to dataset on disk
-            label_set: Optional label set for labelling examples
-            sampler: Optional sampler for drawing frames from each video
-            transform: Optional transform over the list of frames
+            root_path: Path to dataset on disk.
+            label_set: Optional label set for labelling examples.
+            sampler: Optional sampler for drawing frames from each video.
+            transform: Optional transform over the list of frames.
         """
         self.root_path = Path(root_path)
         self.label_set = label_set
@@ -74,14 +72,13 @@ class VideoDataset(torch.utils.data.Dataset):
         """Load an example by index
 
         Args:
-            index: index of the example within the dataset
+            index: index of the example within the dataset.
 
         Returns:
-            Example transformed by transform if set, otherwise the example is
-            converted to a tensor without an transformations applied to it.
-
-            If a label set is present, the method return a tuple:
-            ``(video_tensor, label)``
+            Example transformed by ``transform`` if one was passed during
+            instantiation, otherwise the example is converted to a tensor without any
+            transformations applied to it. Additionally, if a label set is present, the
+            method return a tuple: ``(video_tensor, label)``
         """
         raise NotImplementedError()
 
@@ -91,10 +88,10 @@ class VideoDataset(torch.utils.data.Dataset):
 
 
 class ImageFolderVideoDataset(VideoDataset):
-    """VideoDataset from a folder containing folders of images, each folder represents
-    a video
+    """Dataset stored as a folder containing folders of images, where each folder
+    represents a video.
 
-    The expected folder hierarchy is like the below: ::
+    The folder hierarchy should look something like this: ::
 
         root/video1/frame_000001.jpg
         root/video1/frame_000002.jpg
@@ -125,10 +122,13 @@ class ImageFolderVideoDataset(VideoDataset):
                 example folders, each with frames named according to the
                 ``filename_template`` argument.
             filename_template: Python 3 style formatting string describing frame
-                filenames: e.g. ``"frame_{:05d}.jpg"``
-            label_set: Optional label set for labelling examples
-            sampler: Optional sampler for drawing frames from each video
-            transform: Optional transform over the list of frames
+                filenames: e.g. ``"frame_{:06d}.jpg"`` for the example dataset in the
+                class docstring.
+            filter: Optional filter callable that decides whether a given example folder
+                is to be included in the dataset or not.
+            label_set: Optional label set for labelling examples.
+            sampler: Optional sampler for drawing frames from each video.
+            transform: Optional transform performed over the loaded clip.
         """
         super().__init__(root_path, label_set, sampler=sampler, transform=transform)
         self.video_dirs = sorted(
@@ -180,17 +180,14 @@ class ImageFolderVideoDataset(VideoDataset):
 
 
 class VideoFolderDataset(VideoDataset):
-    """VideoDataset built from a folder of videos, each forming a single example in the
-    dataset.
+    """Dataset stored as a folder of videos, where each video is a single example
+    in the dataset.
 
-    The expected folder hierarchy is like the below: ::
+    The folder hierarchy should look something like this: ::
 
         root/video1.mp4
         root/video2.mp4
         ...
-
-
-    We need to know the duration of the video files, to do this, we expect
     """
 
     def __init__(
@@ -205,9 +202,11 @@ class VideoFolderDataset(VideoDataset):
         Args:
             root_path: Path to dataset folder on disk. The contents of this folder
                 should be video files.
-            label_set: Optional label set for labelling examples
-            sampler: Optional sampler for drawing frames from each video
-            transform: Optional transform over the list of frames
+            filter: Optional filter callable that decides whether a given example video
+                is to be included in the dataset or not.
+            label_set: Optional label set for labelling examples.
+            sampler: Optional sampler for drawing frames from each video.
+            transform: Optional transform over the list of frames.
         """
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
@@ -254,7 +253,7 @@ class VideoFolderDataset(VideoDataset):
 class GulpVideoDataset(VideoDataset):
     """GulpIO Video dataset.
 
-    The expected folder hierarchy is like the below: ::
+    The folder hierarchy should look something like this: ::
 
         root/data_0.gulp
         root/data_1.gulp
@@ -280,13 +279,13 @@ class GulpVideoDataset(VideoDataset):
                 ``.gmeta`` files are direct children of this directory.
             filter: Filter function that determines whether a video is included into
                 the dataset. The filter is called on each video id, and should return
-                True to include the video, and false to exclude it.
+                ``True`` to include the video, and ``False`` to exclude it.
             label_field: Meta data field name that stores the label of an example,
                 this is used to construct a :class:`GulpLabelSet` that performs the
                 example labelling. Defaults to ``'label'``.
             label_set: Optional label set for labelling examples. This is mutually
                 exclusive with ``label_field``.
-            sampler: Optional sampler for drawing frames from each video
+            sampler: Optional sampler for drawing frames from each video.
             transform: Optional transform over the :class:`ndarray` with layout
                 ``THWC``. Note you'll probably want to remap the channels to ``CTHW`` at
                 the end of this transform.

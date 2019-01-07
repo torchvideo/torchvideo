@@ -43,7 +43,9 @@ example and label.
 LabelSet
 ~~~~~~~~
 .. autoclass:: LabelSet
+    :special-members: __getitem__
 
 DummyLabelSet
 ~~~~~~~~~~~~~
 .. autoclass:: DummyLabelSet
+    :special-members: __getitem__

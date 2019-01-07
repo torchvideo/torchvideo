@@ -235,7 +235,7 @@ class TestPILVideoToTensor:
 
 class TestNDArrayToPILVideo:
     def test_repr(self):
-        assert repr(NDArrayToPILVideo()) == "NDArrayToPILVideo()"
+        assert repr(NDArrayToPILVideo()) == "NDArrayToPILVideo(format='thwc')"
 
     @given(video_shape())
     def test_converts_thwc_to_PIL_video(self, shape):

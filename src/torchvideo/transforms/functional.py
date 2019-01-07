@@ -3,7 +3,9 @@ from typing import Sequence
 import torch
 
 
-def normalize(tensor: torch.Tensor, mean: Sequence, std: Sequence):
+def normalize(
+    tensor: torch.Tensor, mean: Sequence, std: Sequence, inplace: bool = False
+):
     """Normalize a tensor video with mean and standard deviation
 
     .. note::
@@ -15,13 +17,27 @@ def normalize(tensor: torch.Tensor, mean: Sequence, std: Sequence):
         tensor: Tensor video of size :math:`(C, T, H, W)` to be normalized.
         mean: Sequence of means for each channel :math:`c`
         std: Sequence of standard deviations for each channel :math:`c`.
+        inplace: Whether to normalise the tensor without cloning or not.
 
     Returns:
         Tensor: Normalised Tensor video.
 
     """
-    for t, m, s in zip(tensor, mean, std):
-        t.sub_(m).div_(s)
+    channel_count = tensor.shape[0]
+    if len(mean) != channel_count:
+        raise ValueError(
+            "Expected mean to be the same length as the number of " "channels"
+        )
+    if len(std) != channel_count:
+        raise ValueError(
+            "Expected std to be the same length as the number of " "channels"
+        )
+    if not inplace:
+        tensor = tensor.clone()
+
+    mean = torch.tensor(mean, dtype=torch.float32)
+    std = torch.tensor(std, dtype=torch.float32)
+    tensor.sub_(mean[:, None, None, None]).div_(std[:, None, None, None])
     return tensor
 
 

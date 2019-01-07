@@ -1,5 +1,6 @@
 hypothesis==3.84.3
 pyfakefs==3.5.5
-pyfakefs==3.5.5
 pytest==4.0.2
 pytest-cov==2.6.0
+pytest-xdist=1.24.0
+scipy==1.2.0

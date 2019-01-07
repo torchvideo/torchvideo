@@ -1,4 +1,5 @@
 import itertools
+import random
 
 import PIL.Image
 import numpy as np
@@ -9,6 +10,11 @@ import torch
 from hypothesis import given, assume, note
 import hypothesis.strategies as st
 from torchvision.transforms import Compose
+
+try:
+    from scipy import stats
+except ImportError:
+    stats = None
 
 from torchvideo.transforms import (
     RandomCropVideo,
@@ -52,12 +58,8 @@ class TestRandomCropVideo:
         for frame in transformed_video:
             assert (frame.size[1], frame.size[0]) == crop_size
 
-    @given(
-        data=st.data(),
-        video=pil_video(min_width=2, min_height=2),
-        fill=st.integers(0, 255),
-    )
-    def test_crop_with_user_provided_padding(self, data, video, fill):
+    @given(video=pil_video(min_width=2, min_height=2), fill=st.integers(0, 255))
+    def test_crop_with_user_provided_padding(self, video, fill):
         width, height = video[0].size
         crop_size = (randint(1, height), randint(1, width))
         padding = tuple([randint(1, 4)] * 4)
@@ -125,11 +127,64 @@ class TestNormalizeVideo:
         assert repr(NormalizeVideo(128, 15)) == "NormalizeVideo(mean=128, std=15)"
 
     @given(tensor_video())
-    def test_mean_centers_tensor(self, video):
-        transform = NormalizeVideo(-0.5, 1)
+    def test_scalar_statistics_smoke(self, video):
+        NormalizeVideo(128, 1)(video)
+
+    @given(tensor_video())
+    def test_vector_statistics_smoke(self, video):
+        mean = [128] * video.shape[0]
+        std = [1] * video.shape[0]
+        NormalizeVideo(mean, std)(video)
+
+    def test_raises_value_error_on_0_std(self):
+        with pytest.raises(ValueError):
+            NormalizeVideo(10, 0)
+
+    def test_raises_value_error_on_0_element_in_std_vector(self):
+        with pytest.raises(ValueError):
+            NormalizeVideo([10, 10], [5, 0])
+
+    @pytest.mark.skipif(stats is None, reason="scipy.stats is not available")
+    def test_distribution_is_normal_after_transform(self):
+        """Basically a direct copy of
+        https://github.com/pytorch/vision/blob/master/test/test_transforms.py#L753"""
+
+        def kstest(tensor):
+            p_value = stats.kstest(list(tensor.view(-1)), "norm", args=(0, 1)).pvalue
+            return p_value
+
+        p_value = 0.0001
+        for channel_count in [1, 3]:
+            # video is uniformly distributed in [0, 1]
+            video = torch.randn(channel_count, 5, 10, 10) * 10 + 5
+            # We want the video not to be sampled from N(0, 1)
+            # i.e. we want to reject the null hypothesis that video is from this
+            # distribution
+            assert kstest(video) <= p_value
+
+            mean = [video[c].mean() for c in range(channel_count)]
+            std = [video[c].std() for c in range(channel_count)]
+            normalized = NormalizeVideo(mean, std)(video)
+
+            # Check the video *is* sampled from N(0, 1)
+            # i.e. we want to maintain the null hypothesis that the normalised video is
+            # from this distribution
+            assert kstest(normalized) >= 0.0001
+
+    @given(st.data())
+    def test_preserves_channel_count(self, data):
+        video = data.draw(tensor_video())
+        input_channel_count = video.size(0)
+        mean = np.random.randn(input_channel_count)
+        std = np.random.randn(input_channel_count)
+        note(mean)
+        note(std)
+        transform = NormalizeVideo(mean, std)
+
         transformed_video = transform(video)
-        # video.mean() - transformed_video.mean() == 0.5
-        # TODO: Finish test
+
+        output_channel_count = transformed_video.size(0)
+        assert input_channel_count == output_channel_count
 
 
 class TestCollectFrames:

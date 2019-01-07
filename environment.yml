@@ -17,6 +17,7 @@ dependencies:
     - hypothesis==3.84.3
     - pytest==4.0.2
     - pytest-cov==2.6.0
+    - pytest-xdist==1.24.0
     - pyfakefs==3.5.5
     - moviepy==0.2.3.5
     - gulpio==531.53
@@ -24,3 +25,4 @@ dependencies:
     - sphinx_autodoc_typehints==1.6.0
     - sphinx_rtd_theme==0.4.2
     - pillow-simd==5.3.0.post0
+    - scipy==1.2.0

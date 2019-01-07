@@ -182,11 +182,15 @@ class NormalizeVideo:
         self,
         mean: Union[Sequence[numbers.Number], numbers.Number],
         std: Union[Sequence[numbers.Number], numbers.Number],
+        inplace: bool = False,
     ):
         self.mean = mean
-        if std == 0:
-            std = 1e-8
         self.std = std
+        self.inplace = inplace
+        if isinstance(std, numbers.Number) and std == 0:
+            raise ValueError("std cannot be 0")
+        if isinstance(std, Sequence) and any([s == 0 for s in std]):
+            raise ValueError("std {} contained 0 value, cannot be 0".format(std))
 
     def __call__(self, frames: torch.Tensor) -> torch.Tensor:
         """
@@ -196,14 +200,14 @@ class NormalizeVideo:
         Returns:
             Normalized Tensor video.
         """
-        channel_count = frames.shape[-1]
+        channel_count = frames.shape[0]
         mean = self._broadcast_to_seq(self.mean, channel_count)
         std = self._broadcast_to_seq(self.std, channel_count)
-        return VF.normalize(frames, mean, std)
+        return VF.normalize(frames, mean, std, inplace=self.inplace)
 
     @staticmethod
     def _broadcast_to_seq(
-        x, channel_count: Union[numbers.Number, Sequence]
+        x: Union[numbers.Number, Sequence], channel_count: int
     ) -> Sequence[numbers.Number]:
         if isinstance(x, numbers.Number):
             return [x] * channel_count

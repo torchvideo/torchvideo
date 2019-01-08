@@ -24,20 +24,28 @@ def normalize(
 
     """
     channel_count = tensor.shape[0]
+    if len(mean) != len(std):
+        raise ValueError(
+            "Expected mean and std to be of the same length, but were "
+            "{} and {} respectively".format(len(mean), len(std))
+        )
     if len(mean) != channel_count:
         raise ValueError(
-            "Expected mean to be the same length as the number of " "channels"
+            "Expected mean to be the same length, {}, as the number of channels"
+            "{}".format(len(mean), channel_count)
         )
     if len(std) != channel_count:
         raise ValueError(
-            "Expected std to be the same length as the number of " "channels"
+            "Expected std to be the same length, {},  as the number of channels, "
+            "{}".format(len(std), channel_count)
         )
     if not inplace:
         tensor = tensor.clone()
 
-    mean = torch.tensor(mean, dtype=torch.float32)
-    std = torch.tensor(std, dtype=torch.float32)
-    tensor.sub_(mean[:, None, None, None]).div_(std[:, None, None, None])
+    statistic_shape = tuple([-1] + [1] * ((tensor.dim() - 1)))
+    mean = torch.tensor(mean, dtype=torch.float32).view(*statistic_shape)
+    std = torch.tensor(std, dtype=torch.float32).view(*statistic_shape)
+    tensor.sub_(mean).div_(std)
     return tensor
 
 

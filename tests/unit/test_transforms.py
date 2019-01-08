@@ -145,7 +145,8 @@ class TestNormalizeVideo:
             NormalizeVideo([10, 10], [5, 0])
 
     @pytest.mark.skipif(stats is None, reason="scipy.stats is not available")
-    def test_distribution_is_normal_after_transform(self):
+    @given(st.integers(2, 4))
+    def test_distribution_is_normal_after_transform(self, ndim):
         """Basically a direct copy of
         https://github.com/pytorch/vision/blob/master/test/test_transforms.py#L753"""
 
@@ -155,8 +156,14 @@ class TestNormalizeVideo:
 
         p_value = 0.0001
         for channel_count in [1, 3]:
-            # video is uniformly distributed in [0, 1]
-            video = torch.randn(channel_count, 5, 10, 10) * 10 + 5
+            # video is normally distributed ~ N(5, 10)
+            if ndim == 2:
+                shape = [channel_count, 500]
+            elif ndim == 3:
+                shape = [channel_count, 10, 50]
+            else:
+                shape = [channel_count, 5, 10, 10]
+            video = torch.randn(*shape) * 10 + 5
             # We want the video not to be sampled from N(0, 1)
             # i.e. we want to reject the null hypothesis that video is from this
             # distribution

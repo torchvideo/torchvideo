@@ -1,3 +1,5 @@
+import numpy as np
+
 import pytest
 
 from tests import TEST_DATA_ROOT
@@ -83,3 +85,12 @@ class TestGulpVideoDataset:
 
         assert len(dataset) == 3
         assert set(dataset._video_ids) == video_ids
+
+    def test_transforms_are_passed_uint8_ndarray_video(self, gulp_dir):
+        dataset = GulpVideoDataset(gulp_dir, transform=lambda f: f)
+
+        vid, _ = dataset[0]
+
+        assert type(vid) == np.ndarray
+        assert vid.dtype == np.uint8
+        assert vid.ndim == 4

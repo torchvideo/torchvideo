@@ -1,7 +1,7 @@
 from abc import ABC
-from collections import namedtuple
 from pathlib import Path
 from typing import Union, Tuple, List, Callable, Any, Iterator, Optional, Dict
+import numbers
 
 import PIL.Image
 from PIL.Image import Image
@@ -343,7 +343,7 @@ class GulpVideoDataset(VideoDataset):
                 frames = np.concatenate(
                     [self._load_frames(id_, slice_) for slice_ in frame_idx]
                 )
-            elif isinstance(frame_idx[0], int):
+            elif isinstance(frame_idx[0], numbers.Number):
                 frames = np.concatenate(
                     [
                         self._load_frames(id_, slice(index, index + 1))
@@ -363,11 +363,11 @@ class GulpVideoDataset(VideoDataset):
 
         if self.transform is not None:
             return self.transform(frames), label
-        return torch.Tensor(np.rollaxis(frames, -1, 0)), label
+        return torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255), label
 
     def _load_frames(self, id_: str, frame_idx: slice) -> np.ndarray:
         frames, _ = self.gulp_dir[id_, frame_idx]
-        return np.array(frames) / 255
+        return np.array(frames, dtype=np.uint8)
 
     def _get_frame_count(self, id_):
         info = self.gulp_dir.merged_meta_dict[id_]

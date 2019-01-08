@@ -66,3 +66,12 @@ class TestImageFolderVideoDataset:
         frames = dataset[1]
         shape = frames.shape
         assert shape == (3, len(frame_idx), *self.video1_size)
+
+    def test_using_custom_frame_counter(self, image_folder):
+        frame_counter = lambda path: 10
+
+        dataset = ImageFolderVideoDataset(
+            image_folder, "frame_{:05d}.jpg", frame_counter=frame_counter
+        )
+
+        assert all([length == 10 for length in dataset.video_lengths])

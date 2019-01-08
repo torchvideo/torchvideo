@@ -114,6 +114,7 @@ class ImageFolderVideoDataset(VideoDataset):
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
         transform: Optional[PILVideoTransform] = None,
+        frame_counter: Optional[Callable[[Path], int]] = None,
     ):
         """
 
@@ -129,14 +130,24 @@ class ImageFolderVideoDataset(VideoDataset):
             label_set: Optional label set for labelling examples.
             sampler: Optional sampler for drawing frames from each video.
             transform: Optional transform performed over the loaded clip.
+            frame_counter: Optional callable used to determine the number of frames
+                each video contains. The callable will be passed the path to a video
+                folder and should return a positive integer representing the number of
+                frames. This tends to be useful if you've precomputed the number of
+                frames in a dataset.
         """
         super().__init__(root_path, label_set, sampler=sampler, transform=transform)
         self.video_dirs = sorted(
             [d for d in self.root_path.iterdir() if filter is None or filter(d)]
         )
-        self.video_lengths = [
-            len(list(video_dir.iterdir())) for video_dir in self.video_dirs
-        ]
+        if frame_counter is None:
+            self.video_lengths = [
+                len(list(video_dir.iterdir())) for video_dir in self.video_dirs
+            ]
+        else:
+            self.video_lengths = [
+                frame_counter(video_dir) for video_dir in self.video_dirs
+            ]
         self.filename_template = filename_template
 
     def __len__(self) -> int:
@@ -197,6 +208,7 @@ class VideoFolderDataset(VideoDataset):
         label_set: Optional[LabelSet] = None,
         sampler: FrameSampler = _default_sampler(),
         transform: Optional[PILVideoTransform] = None,
+        frame_counter: Optional[Callable[[Path], int]] = None,
     ) -> None:
         """
         Args:
@@ -207,6 +219,11 @@ class VideoFolderDataset(VideoDataset):
             label_set: Optional label set for labelling examples.
             sampler: Optional sampler for drawing frames from each video.
             transform: Optional transform over the list of frames.
+            frame_counter: Optional callable used to determine the number of frames
+                each video contains. The callable will be passed the path to a video and
+                should return a positive integer representing the number of frames.
+                This tends to be useful if you've precomputed the number of frames in a
+                dataset.
         """
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
@@ -218,9 +235,10 @@ class VideoFolderDataset(VideoDataset):
                 if _is_video_file(child) and (filter is None or filter(child))
             ]
         )
-        self.video_lengths = [
-            _get_videofile_frame_count(vid_path) for vid_path in self.video_paths
-        ]
+        if frame_counter is None:
+            frame_counter = _get_videofile_frame_count
+
+        self.video_lengths = [frame_counter(vid_path) for vid_path in self.video_paths]
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset

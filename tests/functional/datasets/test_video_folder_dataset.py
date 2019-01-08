@@ -70,3 +70,11 @@ class TestVideoFolderDataset:
 
         frames_shape = frames.size()
         assert frames_shape == (3, len(frames_idx), *self.size)
+
+    def test_using_custom_frame_counter(self, video_folder_dir):
+        const_length = 10
+        frame_counter = lambda path: const_length
+
+        dataset = VideoFolderDataset(video_folder_dir, frame_counter=frame_counter)
+
+        assert all([const_length == length for length in dataset.video_lengths])

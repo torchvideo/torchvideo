@@ -278,7 +278,7 @@ class MultiScaleCropVideo:
     def __init__(
         self,
         size,
-        scales: Tuple[int] = (1, 0.875, 0.75, 0.66),
+        scales: Tuple[float] = (1, 0.875, 0.75, 0.66),
         max_distortion: int = 1,
         fixed_crops: bool = True,
         more_fixed_crops: bool = True,

@@ -5,9 +5,10 @@ language: python
 sudo: required
 dist: xenial
 cache:
+  timeout: 300  # 5 min timeout
   pip: true
   directories:
-    - $HOME/miniconda
+    - /tmp/cache
 
 matrix:
   include:
@@ -49,7 +50,14 @@ install:
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
     fi
 
+  - if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+      cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
+    fi
   - pushd tests/data/media; ./gen_test_media.sh; popd
+  - if [[ ! -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+      mkdir -p /tmp/cache;
+      cp tests/data/media/big_buck_bunny_360p_5mb.mp4 /tmp/cache;
+    fi
 
 script:
 - make test

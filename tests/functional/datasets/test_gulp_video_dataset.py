@@ -94,3 +94,7 @@ class TestGulpVideoDataset:
         assert type(vid) == np.ndarray
         assert vid.dtype == np.uint8
         assert vid.ndim == 4
+
+    def test_labels_are_accessible(self, gulp_dataset):
+        assert len(gulp_dataset.labels) == self.video_count
+        assert all([label == "0" for label in gulp_dataset.labels])

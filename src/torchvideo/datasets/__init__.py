@@ -140,14 +140,8 @@ class ImageFolderVideoDataset(VideoDataset):
         self.video_dirs = sorted(
             [d for d in self.root_path.iterdir() if filter is None or filter(d)]
         )
-        if frame_counter is None:
-            self.video_lengths = [
-                len(list(video_dir.iterdir())) for video_dir in self.video_dirs
-            ]
-        else:
-            self.video_lengths = [
-                frame_counter(video_dir) for video_dir in self.video_dirs
-            ]
+        self.labels = self._label_examples(self.video_dirs, label_set)
+        self.video_lengths = self._measure_video_lengths(self.video_dirs, frame_counter)
         self.filename_template = filename_template
 
     def __len__(self) -> int:
@@ -166,11 +160,27 @@ class ImageFolderVideoDataset(VideoDataset):
         else:
             frames_tensor = self.transform(frames)
 
-        if self.label_set is not None:
-            label = self.label_set[video_name]
+        if self.labels is not None:
+            label = self.labels[index]
             return frames_tensor, label
         else:
             return frames_tensor
+
+    @staticmethod
+    def _measure_video_lengths(
+        video_dirs, frame_counter: Optional[Callable[[Path], int]]
+    ):
+        if frame_counter is None:
+            return [len(list(video_dir.iterdir())) for video_dir in video_dirs]
+        else:
+            return [frame_counter(video_dir) for video_dir in video_dirs]
+
+    @staticmethod
+    def _label_examples(video_dirs, label_set: Optional[LabelSet]):
+        if label_set is not None:
+            return [label_set[video_dir.name] for video_dir in video_dirs]
+        else:
+            return None
 
     def _load_frames(
         self, frames_idx: Union[slice, List[slice], List[int]], video_folder: Path
@@ -228,17 +238,11 @@ class VideoFolderDataset(VideoDataset):
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
-        self.video_paths = sorted(
-            [
-                child
-                for child in self.root_path.iterdir()
-                if _is_video_file(child) and (filter is None or filter(child))
-            ]
+        self.video_paths = self._get_video_paths(self.root_path, filter)
+        self.labels = self._label_examples(self.video_paths, label_set)
+        self.video_lengths = self._measure_video_lengths(
+            self.video_paths, frame_counter
         )
-        if frame_counter is None:
-            frame_counter = _get_videofile_frame_count
-
-        self.video_lengths = [frame_counter(vid_path) for vid_path in self.video_paths]
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset
@@ -251,17 +255,40 @@ class VideoFolderDataset(VideoDataset):
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_file)
 
-        if self.label_set is not None:
-            label = self.label_set[video_name]
-            return frames, label
+        if self.labels is not None:
+            return frames, self.labels[index]
         else:
             return frames
 
     def __len__(self):
         return len(self.video_paths)
 
+    @staticmethod
+    def _measure_video_lengths(video_paths, frame_counter):
+        if frame_counter is None:
+            frame_counter = _get_videofile_frame_count
+        return [frame_counter(vid_path) for vid_path in video_paths]
+
+    @staticmethod
+    def _label_examples(video_paths, label_set: Optional[LabelSet]):
+        if label_set is None:
+            return None
+        else:
+            return [label_set[video_path.name] for video_path in video_paths]
+
+    @staticmethod
+    def _get_video_paths(root_path, filter):
+        return sorted(
+            [
+                root_path / child
+                for child in root_path.iterdir()
+                if _is_video_file(child) and (filter is None or filter(child))
+            ]
+        )
+
+    @staticmethod
     def _load_frames(
-        self, frame_idx: Union[slice, List[slice], List[int]], video_file: Path
+        frame_idx: Union[slice, List[slice], List[int]], video_file: Path
     ) -> Iterator[Image]:
         from torchvideo.internal.readers import default_loader
 
@@ -311,22 +338,19 @@ class GulpVideoDataset(VideoDataset):
         from gulpio import GulpDirectory
 
         self.gulp_dir = GulpDirectory(str(root_path))
-        if label_field is None:
-            label_field = "label"
-        if label_set is None:
-            label_set = GulpLabelSet(
-                self.gulp_dir.merged_meta_dict, label_field=label_field
-            )
+        label_set = self._get_label_set(self.gulp_dir, label_field, label_set)
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
-        self._video_ids = sorted(
-            [
-                id_
-                for id_ in self.gulp_dir.merged_meta_dict.keys()
-                if filter is None or filter(id_)
-            ]
-        )
+        self._video_ids = self._get_video_ids(self.gulp_dir, filter)
+        self.labels = self._label_examples(self._video_ids, self.label_set)
+
+    @staticmethod
+    def _label_examples(video_ids: List[str], label_set: Optional[LabelSet]):
+        if label_set is None:
+            return None
+        else:
+            return [label_set[video_id] for video_id in video_ids]
 
     def __len__(self):
         return len(self._video_ids)
@@ -335,7 +359,6 @@ class GulpVideoDataset(VideoDataset):
         id_ = self._video_ids[index]
         frame_count = self._get_frame_count(id_)
         frame_idx = self.sampler.sample(frame_count)
-        label = self.label_set[id_]
         if isinstance(frame_idx, slice):
             frames = self._load_frames(id_, frame_idx)
         elif isinstance(frame_idx, list):
@@ -362,14 +385,39 @@ class GulpVideoDataset(VideoDataset):
             )
 
         if self.transform is not None:
-            return self.transform(frames), label
-        return torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255), label
+            frames = self.transform(frames)
+        else:
+            frames = torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255)
+
+        if self.labels is not None:
+            label = self.labels[index]
+            return frames, label
+        else:
+            return frames
+
+    @staticmethod
+    def _get_video_ids(gulp_dir, filter_fn: Callable[[str], bool]) -> List[str]:
+        return sorted(
+            [
+                id_
+                for id_ in gulp_dir.merged_meta_dict.keys()
+                if filter_fn is None or filter_fn(id_)
+            ]
+        )
+
+    @staticmethod
+    def _get_label_set(gulp_dir, label_field: str, label_set: LabelSet):
+        if label_field is None:
+            label_field = "label"
+        if label_set is None:
+            label_set = GulpLabelSet(gulp_dir.merged_meta_dict, label_field=label_field)
+        return label_set
 
     def _load_frames(self, id_: str, frame_idx: slice) -> np.ndarray:
         frames, _ = self.gulp_dir[id_, frame_idx]
         return np.array(frames, dtype=np.uint8)
 
-    def _get_frame_count(self, id_):
+    def _get_frame_count(self, id_: str):
         info = self.gulp_dir.merged_meta_dict[id_]
         return len(info["frame_info"])
 
@@ -389,6 +437,20 @@ class DummyLabelSet(LabelSet):
 
     def __repr__(self):
         return self.__class__.__name__ + "(label={!r})".format(self.label)
+
+
+class LambdaLabelSet(LabelSet):
+    """A label set that wraps a function used to retrieve a label for an example"""
+
+    def __init__(self, labeller_fn: Callable[[str], Label]):
+        """
+        Args:
+            labeller_fn: Function for labelling examples.
+        """
+        self._labeller_fn = labeller_fn
+
+    def __getitem__(self, video_name: str) -> Label:
+        return self._labeller_fn(video_name)
 
 
 class GulpLabelSet(LabelSet):

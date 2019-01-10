@@ -254,6 +254,8 @@ class VideoFolderDataset(VideoDataset):
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_file)
+        if self.transform is not None:
+            frames = self.transform(frames)
 
         if self.labels is not None:
             return frames, self.labels[index]

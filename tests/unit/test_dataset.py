@@ -1,5 +1,7 @@
+import numpy
 import os
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
@@ -11,6 +13,7 @@ from torchvideo.datasets import (
     DummyLabelSet,
     LambdaLabelSet,
 )
+from torchvideo.internal.utils import frame_idx_to_list
 
 
 @pytest.fixture
@@ -106,6 +109,25 @@ class TestVideoFolderDatasetUnit:
 
         assert len(dataset.labels) == video_count
         assert all([label == i for i, label in enumerate(dataset.labels)])
+
+    def test_transform_is_called_if_provided(self, dataset_dir, fs, monkeypatch):
+        def _load_mock_frames(self, frames_idx, video_file):
+            frames_count = len(frame_idx_to_list(frames_idx))
+            return numpy.zeros((frames_count, 10, 20, 3))
+
+        monkeypatch.setattr(
+            torchvideo.datasets.VideoFolderDataset, "_load_frames", _load_mock_frames
+        )
+        video_count = 10
+        self.make_video_files(dataset_dir, fs, video_count)
+        mock_transform = Mock(side_effect=lambda frames: frames)
+        dataset = VideoFolderDataset(
+            dataset_dir, transform=mock_transform, frame_counter=lambda p: 20
+        )
+
+        frames = dataset[0]
+
+        mock_transform.assert_called_once_with(frames)
 
     @staticmethod
     def make_video_files(dataset_dir, fs, video_count):

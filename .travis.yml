@@ -5,6 +5,7 @@ language: python
 sudo: required
 dist: xenial
 cache:
+  timeout: 300  # 5 min timeout
   pip: true
   directories:
     - $HOME/miniconda

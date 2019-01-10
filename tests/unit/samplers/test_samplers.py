@@ -46,11 +46,15 @@ class TestFrameSampler:
 
 
 class TestClipSampler:
-    @given(st.integers(1, 100), st.integers(1, 100), st.integers(1, 5))
-    def test_produces_frame_idx_of_given_length(
-        self, video_length, clip_length, step_size
-    ):
-        assume(video_length >= clip_length * step_size)
+    @given(st.data())
+    def test_produces_frame_idx_of_given_length(self, data):
+        video_length = data.draw(st.integers(1, 1000))
+        step_size = data.draw(st.integers(1, 100))
+        max_clip_length = max((video_length // step_size) - 1, 1)
+        if max_clip_length == 1:
+            clip_length = 1
+        else:
+            clip_length = data.draw(st.integers(1, max_clip_length))
         sampler = ClipSampler(clip_length, step_size)
 
         frame_idx = sampler.sample(video_length)

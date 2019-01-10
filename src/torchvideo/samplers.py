@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Union, List, Callable
 from numpy.random import randint, np
 
-from torchvideo.internal.utils import frame_idx_to_list
+from torchvideo.internal.utils import frame_idx_to_list, compute_sample_length
 
 
 class FrameSampler(ABC):  # pragma: no cover
@@ -71,20 +71,17 @@ class ClipSampler(FrameSampler):
         self.frame_step = frame_step
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
-        if video_length < self.clip_length * self.frame_step:
+        sample_length = compute_sample_length(self.clip_length, self.frame_step)
+        if video_length < sample_length:
             raise ValueError(
                 "Video ({} frames) is shorter than clip ({} frames)".format(
-                    video_length, self.clip_length
+                    video_length, sample_length
                 )
             )
-        max_offset = video_length - self.clip_length * self.frame_step
+        max_offset = video_length - sample_length
 
         start_index = 0 if max_offset == 0 else randint(0, max_offset)
-        return slice(
-            start_index,
-            start_index + self.clip_length * self.frame_step,
-            self.frame_step,
-        )
+        return slice(start_index, start_index + sample_length, self.frame_step)
 
     def __repr__(self):
         return self.__class__.__name__ + "(clip_length={!r}, frame_step={!r})".format(

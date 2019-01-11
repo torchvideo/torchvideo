@@ -3,7 +3,17 @@ import numpy as np
 
 import PIL
 import random
-from typing import List, Tuple, Union, Sequence, Callable, Iterator, Iterable, Optional
+from typing import (
+    List,
+    Tuple,
+    Union,
+    Sequence,
+    Callable,
+    Iterator,
+    Iterable,
+    Optional,
+    cast,
+)
 
 import torch
 from PIL.Image import Image
@@ -14,6 +24,30 @@ from collections import namedtuple
 
 
 ImageShape = namedtuple("ImageSize", ["height", "width"])
+
+
+def _canonicalize_size(size: Union[int, Tuple[int, int]]) -> ImageShape:
+    """
+
+    Args:
+        size:
+
+    Returns:
+
+    """
+    if isinstance(size, numbers.Number):
+        return ImageShape(int(size), int(size))
+    else:
+        size = cast(Tuple[int, int], size)
+        return ImageShape(size[0], size[1])
+
+
+def _to_iter(seq: Union[Iterator, Iterable]) -> Iterator:
+    try:
+        return seq.__iter__()
+    except AttributeError:
+        pass
+    return cast(Iterator, seq)
 
 
 class RandomCropVideo:
@@ -56,10 +90,7 @@ class RandomCropVideo:
         fill: int = 0,
         padding_mode: str = "constant",
     ):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
+        self.size = _canonicalize_size(size)
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
@@ -68,11 +99,7 @@ class RandomCropVideo:
     def __call__(
         self, frames: Union[Iterator[Image], Iterable[Image]]
     ) -> Iterator[Image]:
-        try:
-            frames = frames.__iter__()
-        except AttributeError:
-            pass
-
+        frames = _to_iter(frames)
         frame = self._maybe_pad(next(frames))
         i, j, h, w = T.RandomCrop.get_params(frame, self.size)
 
@@ -278,15 +305,12 @@ class MultiScaleCropVideo:
     def __init__(
         self,
         size,
-        scales: Tuple[float] = (1, 0.875, 0.75, 0.66),
+        scales: Sequence[float] = (1, 0.875, 0.75, 0.66),
         max_distortion: int = 1,
         fixed_crops: bool = True,
         more_fixed_crops: bool = True,
     ):
-        if isinstance(size, numbers.Number):
-            self.size = ImageShape(int(size), int(size))
-        else:
-            self.size = ImageShape(*size)
+        self.size = _canonicalize_size(size)
         self.scales = scales
         self.max_distortion = max_distortion
         self.fixed_crops = fixed_crops
@@ -296,10 +320,7 @@ class MultiScaleCropVideo:
         self.interpolation = PIL.Image.BILINEAR
 
     def __call__(self, frames: Iterator[Image]) -> Iterator[Image]:
-        try:
-            frames = frames.__iter__()
-        except AttributeError:
-            pass
+        frames = _to_iter(frames)
         frame = next(frames)
 
         h, w, i, j = self.get_params(
@@ -449,10 +470,7 @@ class RandomResizedCropVideo:
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation=PIL.Image.BILINEAR,
     ):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
+        self.size = _canonicalize_size(size)
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
@@ -460,11 +478,7 @@ class RandomResizedCropVideo:
     def __call__(
         self, frames: Union[Iterator[Image], Iterable[Image]]
     ) -> Iterator[Image]:
-        try:
-            frames = frames.__iter__()
-        except AttributeError:
-            pass
-
+        frames = _to_iter(frames)
         frame = next(frames)
         i, j, h, w = T.RandomResizedCrop.get_params(frame, self.scale, self.ratio)
         yield self._transform_frame(frame, i, j, h, w)

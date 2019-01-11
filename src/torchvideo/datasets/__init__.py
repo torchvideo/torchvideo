@@ -1,6 +1,6 @@
 from abc import ABC
 from pathlib import Path
-from typing import Union, Tuple, List, Callable, Any, Iterator, Optional, Dict
+from typing import Union, Tuple, List, Callable, Any, Iterator, Optional, Dict, cast
 import numbers
 
 import PIL.Image
@@ -365,6 +365,7 @@ class GulpVideoDataset(VideoDataset):
             frames = self._load_frames(id_, frame_idx)
         elif isinstance(frame_idx, list):
             if isinstance(frame_idx[0], slice):
+                frame_idx = cast(List[slice], frame_idx)
                 frames = np.concatenate(
                     [self._load_frames(id_, slice_) for slice_ in frame_idx]
                 )
@@ -398,7 +399,9 @@ class GulpVideoDataset(VideoDataset):
             return frames
 
     @staticmethod
-    def _get_video_ids(gulp_dir, filter_fn: Callable[[str], bool]) -> List[str]:
+    def _get_video_ids(
+        gulp_dir, filter_fn: Optional[Callable[[str], bool]]
+    ) -> List[str]:
         return sorted(
             [
                 id_
@@ -408,7 +411,9 @@ class GulpVideoDataset(VideoDataset):
         )
 
     @staticmethod
-    def _get_label_set(gulp_dir, label_field: str, label_set: LabelSet):
+    def _get_label_set(
+        gulp_dir, label_field: Optional[str], label_set: Optional[LabelSet]
+    ):
         if label_field is None:
             label_field = "label"
         if label_set is None:

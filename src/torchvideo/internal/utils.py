@@ -1,10 +1,14 @@
 import itertools
-from typing import List, Union
+from typing import List, Union, cast
 
 
 def _slice_to_list(slice_: slice) -> List[int]:
     step = 1 if slice_.step is None else slice_.step
-    return list(range(slice_.start, slice_.stop, step))
+    start = 0 if slice_.start is None else slice_.start
+    stop = slice_.stop
+    if stop is None:
+        raise ValueError("Cannot convert slice with no stop attribute to a list")
+    return list(range(start, stop, step))
 
 
 def _is_int(maybe_int):
@@ -27,13 +31,16 @@ def frame_idx_to_list(frames_idx: Union[slice, List[slice], List[int]]) -> List[
         frame idx as a list of ints.
 
     """
+    # mypy needs type assertions within these conditional blocks to get the correct
+    # types
     if isinstance(frames_idx, list):
         if isinstance(frames_idx[0], slice):
+            frames_idx = cast(List[slice], frames_idx)
             return list(
                 itertools.chain.from_iterable([_slice_to_list(s) for s in frames_idx])
             )
         if _is_int(frames_idx[0]):
-            return frames_idx
+            return cast(List[int], frames_idx)
     if isinstance(frames_idx, slice):
         return _slice_to_list(frames_idx)
     raise ValueError(

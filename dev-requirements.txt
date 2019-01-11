@@ -1,4 +1,5 @@
 hypothesis==3.84.3
+mypy==0.650
 pyfakefs==3.5.5
 pytest==4.0.2
 pytest-cov==2.6.0

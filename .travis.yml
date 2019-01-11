@@ -14,8 +14,10 @@ matrix:
   include:
     - env: LINT_CHECK
       python: "3.6"
-      install: pip install flake8
-      script: flake8
+      install: pip install flake8 mypy
+      script:
+      - flake8
+      - mypy src/torchvideo
 
     - python: "3.6"
       #    - python: "3.6"

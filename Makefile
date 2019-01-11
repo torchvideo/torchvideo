@@ -18,3 +18,7 @@ functional_test:
 .PHONY: docs
 docs:
 	$(MAKE) -C docs html
+
+.PHONY: mypy
+mypy:
+	mypy src/torchvideo

@@ -4,6 +4,6 @@ Play with torchvideo in a Jupyter notebook without installing anything thanks to
 
 | Subject | Binder link |
 |---------|-------------|
-| Learn about the `VideoDataset` API | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=examples%2Fdatasets.ipynb) |
-| Learn using video `Transforms` | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=examples%2Ftransforms.ipynb) |
-| Learn sampling frames from videos using the `FrameSampler` API | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=examples%2Fsamplers.ipynb) |
+| Learn about the `VideoDataset` API | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=%2Fexamples%2Fdatasets.ipynb) |
+| Learn using video `Transforms` | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=%2Fexamples%2Ftransforms.ipynb) |
+| Learn sampling frames from videos using the `FrameSampler` API | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/willprice/torchvideo/master?filepath=%2Fexamples%2Fsamplers.ipynb) |

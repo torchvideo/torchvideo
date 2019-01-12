@@ -7,6 +7,7 @@ import PIL.Image
 from PIL.Image import Image
 import numpy as np
 import torch.utils.data
+from torchvision.transforms import Compose
 
 from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.internal.utils import frame_idx_to_list
@@ -156,7 +157,6 @@ class ImageFolderVideoDataset(VideoDataset):
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
         video_folder = self.video_dirs[index]
         video_length = self.video_lengths[index]
-        video_name = video_folder.name
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_folder)
         if self.transform is None:
@@ -239,6 +239,8 @@ class VideoFolderDataset(VideoDataset):
                 This tends to be useful if you've precomputed the number of frames in a
                 dataset.
         """
+        if transform is None:
+            transform = PILVideoToTensor()
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
@@ -254,7 +256,6 @@ class VideoFolderDataset(VideoDataset):
         self, index: int
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
         video_file = self.video_paths[index]
-        video_name = video_file.stem
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_file)
@@ -286,7 +287,7 @@ class VideoFolderDataset(VideoDataset):
     def _get_video_paths(root_path, filter):
         return sorted(
             [
-                root_path / child
+                child
                 for child in root_path.iterdir()
                 if _is_video_file(child) and (filter is None or filter(child))
             ]

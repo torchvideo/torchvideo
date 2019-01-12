@@ -3,9 +3,10 @@ from collections import namedtuple
 
 import numpy as np
 
-import torch
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Iterator
+
+from PIL import Image
 
 from torchvideo.internal.utils import frame_idx_to_list
 
@@ -25,7 +26,7 @@ _VIDEO_FILE_EXTENSIONS = {
 
 def lintel_loader(
     path: Path, frames_idx: Union[slice, List[slice], List[int]]
-) -> torch.Tensor:
+) -> Iterator[Image.Image]:
     import lintel
 
     with path.open("rb") as f:
@@ -38,12 +39,12 @@ def lintel_loader(
     frames = np.frombuffer(frames_data, dtype=np.uint8)
     # TODO: Support 1 channel grayscale video
     frames = np.reshape(frames, newshape=(len(frames_idx), height, width, 3))
-    return torch.Tensor(np.moveaxis(frames, -1, 0)).div_(255)
+    return (Image.fromarray(frame) for frame in frames)
 
 
 def default_loader(
     path: Path, frames_idx: Union[slice, List[slice], List[int]]
-) -> torch.Tensor:
+) -> Iterator[Image.Image]:
     from torchvideo import get_video_backend
 
     backend = get_video_backend()

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# type: ignore
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -15,6 +16,7 @@
 # import os
 import os
 import sys
+from typing import List, Dict, Any
 
 _here = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.join(_here, "..", "..", "src")
@@ -24,7 +26,7 @@ sys.path.insert(0, src_dir)
 
 # -- Project information -----------------------------------------------------
 
-about = {}
+about = {}  # type: Dict[str, Any]
 with open(os.path.join(src_dir, "torchvideo", "__version__.py")) as f:
     exec(f.read(), about)
 project = about["__title__"]
@@ -80,7 +82,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = []  # type: List[str]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -140,7 +142,7 @@ latex_elements = {
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
-}
+}  # type: Dict[str, Any]
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
@@ -219,6 +221,17 @@ todo_include_todos = True
 #
 # http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#directive-autoclass
 autoclass_content = "both"
+
+# Default options to an ..autoXXX directive.
+autodoc_default_options = {
+    "members": None,
+    "inherited-members": None,
+    "show-inheritance": None,
+}
+
+
+# Subclasses should show parent classes docstrings if they don't override them.
+autodoc_inherit_docstrings = True
 
 # Mock out external dependencies that don't provide types present in any signature.
 # Why?

@@ -22,3 +22,15 @@ docs:
 .PHONY: mypy
 mypy:
 	mypy src/torchvideo
+
+.PHONY: clean
+clean: clean-docs clean-build
+
+
+.PHONY: clean-docs
+clean-docs:
+	$(MAKE) -C docs clean
+
+.PHONY: clean-build
+clean-build:
+	@rm -rf dist build

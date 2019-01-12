@@ -85,30 +85,37 @@ CenterCropVideo
 ~~~~~~~~~~~~~~~
 
 .. autoclass:: CenterCropVideo
+    :special-members: __call__
 
 RandomCropVideo
 ~~~~~~~~~~~~~~~
 .. autoclass:: RandomCropVideo
+    :special-members: __call__
 
 RandomHorizontalFlipVideo
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: RandomHorizontalFlipVideo
+    :special-members: __call__
 
 ResizeVideo
 ~~~~~~~~~~~
 .. autoclass:: ResizeVideo
+    :special-members: __call__
 
 MultiScaleCropVideo
 ~~~~~~~~~~~~~~~~~~~
 .. autoclass:: MultiScaleCropVideo
+    :special-members: __call__
 
 RandomResizedCropVideo
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: RandomResizedCropVideo
+    :special-members: __call__
 
 TimeApply
 ~~~~~~~~~
 .. autoclass:: TimeApply
+    :special-members: __call__
 
 ----
 
@@ -122,10 +129,12 @@ transforms should be a tensor of shape :math:`(C, T, H, W)`.
 NormalizeVideo
 ~~~~~~~~~~~~~~
 .. autoclass:: NormalizeVideo
+    :special-members: __call__
 
 TimeToChannel
 ~~~~~~~~~~~~~
 .. autoclass:: TimeToChannel
+    :special-members: __call__
 
 ----
 
@@ -142,14 +151,17 @@ will then be aggregated by ``CollectFrames`` and then coverted to a tensor via
 CollectFrames
 ~~~~~~~~~~~~~
 .. autoclass:: CollectFrames
+    :special-members: __call__
 
 PILVideoToTensor
 ~~~~~~~~~~~~~~~~
 .. autoclass:: PILVideoToTensor
+    :special-members: __call__
 
 NDArrayToPILVideo
 ~~~~~~~~~~~~~~~~~
 .. autoclass:: NDArrayToPILVideo
+    :special-members: __call__
 
 ----
 

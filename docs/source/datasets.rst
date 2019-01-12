@@ -49,3 +49,8 @@ DummyLabelSet
 ~~~~~~~~~~~~~
 .. autoclass:: DummyLabelSet
     :special-members: __getitem__
+
+GulpLabelSet
+~~~~~~~~~~~~
+.. autoclass:: GulpLabelSet
+    :special-members: __getitem__

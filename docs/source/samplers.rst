@@ -18,24 +18,19 @@ of sampling strategies with the opportunity to implement your own.
 FrameSampler
 ~~~~~~~~~~~~
 .. autoclass:: FrameSampler
-    :members:
 
 ClipSampler
 ~~~~~~~~~~~
 .. autoclass:: ClipSampler
-    :members:
 
 FullVideoSampler
 ~~~~~~~~~~~~~~~~
 .. autoclass:: FullVideoSampler
-    :members:
 
 TemporalSegmentSampler
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autoclass:: TemporalSegmentSampler
-    :members:
 
 LambdaSampler
 ~~~~~~~~~~~~~
 .. autoclass:: LambdaSampler
-    :members:

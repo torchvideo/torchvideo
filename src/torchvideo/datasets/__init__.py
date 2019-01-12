@@ -65,6 +65,10 @@ class VideoDataset(torch.utils.data.Dataset):
         self.label_set = label_set
         self.sampler = sampler
         self.transform = transform
+        self.labels = None  # type: Optional[List[Any]]
+        """The labels corresponding to the examples in the dataset. To get the label
+        for example at index ``i`` you simple call ``dataset.labels[i]``, although
+        this will be returned by ``__getitem__`` if this field is not None."""
 
     def __getitem__(
         self, index: int

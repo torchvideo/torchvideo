@@ -71,11 +71,11 @@ class RandomCropVideo:
             ``'reflect'`` or ``'symmetric'``.
 
              - ``'constant'``: pads with a constant value, this value is specified with
-               fill
-             - ``'edge'``: pads with the last value on the edge of the image
+               fill.
+             - ``'edge'``: pads with the last value on the edge of the image.
              - ``'reflect'``: pads with reflection of image (without repeating the last
                value on the edge) padding ``[1, 2, 3, 4]`` with 2 elements on both sides
-                in reflect mode will result in ``[3, 2, 1, 2, 3, 4, 3, 2]``.
+               in reflect mode will result in ``[3, 2, 1, 2, 3, 4, 3, 2]``.
              - ``'symmetric'``: pads with reflection of image (repeating the last value
                on the edge) padding ``[1, 2, 3, 4]`` with 2 elements on both sides in
                symmetric mode will result in ``[2, 1, 1, 2, 3, 4, 4, 3]``.

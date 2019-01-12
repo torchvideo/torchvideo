@@ -7,7 +7,7 @@ import pytest
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
-from assertions.seq import assert_ordered
+from assertions.seq import assert_ordered, assert_elems_gte, assert_elems_lt
 from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import FullVideoSampler, TemporalSegmentSampler, ClipSampler
 
@@ -18,8 +18,8 @@ def full_video_sampler():
 
 def temporal_segment_sampler():
     segment_count = st.integers(1, 100).example()
-    segment_length = st.integers(1, 1000).example()
-    return TemporalSegmentSampler(segment_count, segment_length)
+    snippet_length = st.integers(1, 1000).example()
+    return TemporalSegmentSampler(segment_count, snippet_length)
 
 
 @pytest.fixture(params=[full_video_sampler, temporal_segment_sampler])
@@ -41,8 +41,8 @@ class TestFrameSampler:
         frames_idx = frame_idx_to_list(frames_idx)
 
         assert_ordered(frames_idx)
-        assert np.all(np.array(frames_idx) >= 0)
-        assert np.all(np.array(frames_idx) < frame_count)
+        assert_elems_lt(frames_idx, frame_count)
+        assert_elems_gte(frames_idx, 0)
 
 
 class TestClipSampler:

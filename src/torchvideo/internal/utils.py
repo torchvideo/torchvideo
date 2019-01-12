@@ -34,6 +34,8 @@ def frame_idx_to_list(frames_idx: Union[slice, List[slice], List[int]]) -> List[
     # mypy needs type assertions within these conditional blocks to get the correct
     # types
     if isinstance(frames_idx, list):
+        if len(frames_idx) == 0:
+            return cast(List[int], frames_idx)
         if isinstance(frames_idx[0], slice):
             frames_idx = cast(List[slice], frames_idx)
             return list(

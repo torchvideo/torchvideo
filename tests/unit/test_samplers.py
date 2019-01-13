@@ -6,12 +6,12 @@ from hypothesis import given
 import hypothesis.strategies as st
 
 from assertions.seq import assert_ordered, assert_elems_gte, assert_elems_lt
-from torchvideo.internal.utils import frame_idx_to_list
 from torchvideo.samplers import (
     FullVideoSampler,
     TemporalSegmentSampler,
     ClipSampler,
     LambdaSampler,
+    frame_idx_to_list,
 )
 
 

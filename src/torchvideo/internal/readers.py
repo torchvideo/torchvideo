@@ -8,7 +8,7 @@ from typing import Union, List, Iterator
 
 from PIL import Image
 
-from torchvideo.internal.utils import frame_idx_to_list
+from torchvideo.samplers import frame_idx_to_list
 
 VideoInfo = namedtuple("VideoInfo", ("height", "width", "n_frames"))
 _VIDEO_FILE_EXTENSIONS = {

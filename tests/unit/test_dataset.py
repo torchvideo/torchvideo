@@ -13,7 +13,7 @@ from torchvideo.datasets import (
     DummyLabelSet,
     LambdaLabelSet,
 )
-from torchvideo.internal.utils import frame_idx_to_list
+from torchvideo.samplers import frame_idx_to_list
 
 
 @pytest.fixture

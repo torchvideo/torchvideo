@@ -1,7 +1,6 @@
 import pytest
 
-from torchvideo.internal.utils import compute_sample_length
-
+from torchvideo.samplers import compute_sample_length
 
 sample_length_test_data = [
     (1, 1, 1),

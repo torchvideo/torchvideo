@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - av=6.1.0
+  - ffmpeg==4.0.2
   - lintel=1.0
   - numpy=1.15.4
   - cuda90=1.0

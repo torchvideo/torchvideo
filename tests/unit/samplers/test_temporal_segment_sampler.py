@@ -5,8 +5,7 @@ import pytest
 from hypothesis import given
 import hypothesis.strategies as st
 
-from torchvideo.internal.utils import frame_idx_to_list
-from torchvideo.samplers import TemporalSegmentSampler
+from torchvideo.samplers import TemporalSegmentSampler, frame_idx_to_list
 from unit.samplers import assert_valid_frame_index
 
 

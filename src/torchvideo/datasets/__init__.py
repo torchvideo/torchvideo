@@ -9,8 +9,7 @@ import numpy as np
 import torch.utils.data
 
 from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
-from torchvideo.internal.utils import frame_idx_to_list
-from torchvideo.samplers import FrameSampler, FullVideoSampler
+from torchvideo.samplers import FrameSampler, FullVideoSampler, frame_idx_to_list
 from torchvideo.transforms import PILVideoToTensor
 
 

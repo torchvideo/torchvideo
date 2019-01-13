@@ -8,8 +8,12 @@ from hypothesis import given, assume
 import hypothesis.strategies as st
 
 from assertions.seq import assert_ordered, assert_elems_gte, assert_elems_lt
-from torchvideo.internal.utils import frame_idx_to_list
-from torchvideo.samplers import FullVideoSampler, TemporalSegmentSampler, ClipSampler
+from torchvideo.samplers import (
+    FullVideoSampler,
+    TemporalSegmentSampler,
+    ClipSampler,
+    frame_idx_to_list,
+)
 
 
 def full_video_sampler():

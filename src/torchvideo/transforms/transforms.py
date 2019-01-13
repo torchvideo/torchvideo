@@ -342,7 +342,7 @@ class MultiScaleCropVideo:
     def __repr__(self):
         return (
             self.__class__.__name__
-            + "(size={size}, scales={scales}, max_distortion={max_distortion},"
+            + "(size={size}, scales={scales}, max_distortion={max_distortion}, "
             "fixed_crops={fixed_crops}, more_fixed_crops={more_fixed_crops})".format(
                 size=self.size,
                 scales=self.scales,

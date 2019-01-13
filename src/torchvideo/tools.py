@@ -14,15 +14,22 @@ except ImportError:
 
 
 def show_video(
-    frames: Union[torch.Tensor, np.ndarray, List[Image]], fps=30, ndarray_format="CTHW"
+    frames: Union[torch.Tensor, np.ndarray, List[Image]], fps=30, ndarray_format="THWC"
 ):
-    """
+    """Show ``frames`` a video in Jupyter, or in a PyGame window using ``moviepy``.
 
     Args:
-        frames: Either a :class:`torch.Tensor` or :class:`numpy.ndarray` of shape
-            :math:`T \times C \times H \times W` or a list of :class:`PIL.Image.Image`s
+        frames: One of:
+
+            - :class:`torch.Tensor` with layout ``CTHW``.
+            - :class:`numpy.ndarray` of layout ``THWC`` or ``CTHW``, if the latter,
+              then set ``ndarray_format`` to ``CTHW``. The array should have a
+              ``np.uint8`` dtype and range ``[0, 255]``.
+            - a list of :class:`PIL.Image.Image`.
+
         fps (optional): Frame rate of video
         ndarray_format: 'CTHW' or 'THWC' depending on layout of ndarray.
+
     Returns:
         ImageSequenceClip displayed.
 
@@ -38,7 +45,7 @@ def show_video(
 
 
 def _to_list_of_np_frames(
-    frames: Union[torch.Tensor, np.ndarray, List[Image]], ndarray_format="CTHW"
+    frames: Union[torch.Tensor, np.ndarray, List[Image]], ndarray_format="THWC"
 ) -> List[np.ndarray]:
     """
 

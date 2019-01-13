@@ -7,7 +7,6 @@ import PIL.Image
 from PIL.Image import Image
 import numpy as np
 import torch.utils.data
-from torchvision.transforms import Compose
 
 from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.samplers import FrameSampler, FullVideoSampler, frame_idx_to_list

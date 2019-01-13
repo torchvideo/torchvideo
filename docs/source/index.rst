@@ -17,6 +17,7 @@ pytorch. It contains transforms and dataset classes. It is built atop of
    datasets
    samplers
    transforms
+   tools
 
    bibliography
 

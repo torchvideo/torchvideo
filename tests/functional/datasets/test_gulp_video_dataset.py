@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import numpy as np
 
 import pytest
@@ -94,6 +96,15 @@ class TestGulpVideoDataset:
         assert type(vid) == np.ndarray
         assert vid.dtype == np.uint8
         assert vid.ndim == 4
+
+    def test_transform_is_called(self, gulp_dir):
+        transform = Mock(side_effect=lambda frames: frames)
+        dataset = GulpVideoDataset(gulp_dir, transform=transform)
+
+        frames, _ = dataset[0]
+
+        assert frames is not None
+        assert transform.called_once_with(frames)
 
     def test_labels_are_accessible(self, gulp_dataset):
         assert len(gulp_dataset.labels) == self.video_count

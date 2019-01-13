@@ -69,10 +69,25 @@ class TestImageFolderVideoDatasetUnit:
         assert 10 == len(dataset.labels)
         assert all([label == i for i, label in enumerate(dataset.labels)])
 
+    def test_transform_is_applied(self, dataset_dir):
+        self.make_video_dirs(dataset_dir, 1)
+        transform = Mock(side_effect=lambda frames: frames)
+        dataset = ImageFolderVideoDataset(
+            dataset_dir, "frame_{:05d}.jpg", transform=transform
+        )
+
+        frames = dataset[0]
+
+        assert transform.called_once_with(frames)
+
     @staticmethod
-    def make_video_dirs(dataset_dir, video_count):
+    def make_video_dirs(dataset_dir, video_count, frame_count=10):
         for i in range(0, video_count):
-            os.makedirs(os.path.join(dataset_dir, "video{}".format(i)))
+            video_dir = os.path.join(dataset_dir, "video{}".format(i))
+            os.makedirs(video_dir)
+            for i in range(frame_count):
+                frame_path = os.path.join(video_dir, "frame_{:05d}.jpg".format(i + 1))
+                open(frame_path, "ab").close()
 
 
 class TestVideoFolderDatasetUnit:
@@ -110,7 +125,7 @@ class TestVideoFolderDatasetUnit:
         assert len(dataset.labels) == video_count
         assert all([label == i for i, label in enumerate(dataset.labels)])
 
-    def test_transform_is_called_if_provided(self, dataset_dir, fs, monkeypatch):
+    def test_transform_is_applied(self, dataset_dir, fs, monkeypatch):
         def _load_mock_frames(self, frames_idx, video_file):
             frames_count = len(frame_idx_to_list(frames_idx))
             return numpy.zeros((frames_count, 10, 20, 3))

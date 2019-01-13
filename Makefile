@@ -15,6 +15,11 @@ unit_test:
 functional_test:
 	COVERAGE_FILE=.coverage-functional PYTHONPATH=$(PYTHONPATH) pytest tests/functional
 
+.PHONY: doctest
+doctest:
+	COVERAGE_FILE=.coverage-doctest PYTHONPATH=$(PYTHONPATH) pytest src
+
+
 .PHONY: docs
 docs:
 	$(MAKE) -C docs html

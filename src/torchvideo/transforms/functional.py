@@ -34,11 +34,6 @@ def normalize(
             "Expected mean to be the same length, {}, as the number of channels"
             "{}".format(len(mean), channel_count)
         )
-    if len(std) != channel_count:
-        raise ValueError(
-            "Expected std to be the same length, {},  as the number of channels, "
-            "{}".format(len(std), channel_count)
-        )
     if not inplace:
         tensor = tensor.clone()
 

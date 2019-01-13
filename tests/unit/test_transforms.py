@@ -146,6 +146,30 @@ class TestNormalizeVideo:
         with pytest.raises(ValueError):
             NormalizeVideo([10, 10], [5, 0])
 
+    def test_raises_value_error_when_length_of_std_and_mean_dont_match(self):
+        with pytest.raises(ValueError):
+            NormalizeVideo([10], [5, 0])
+
+    def test_raises_value_error_when_length_of_mean_is_not_equal_to_channel_count(self):
+        transform = NormalizeVideo([10, 10], [5, 5])
+
+        with pytest.raises(ValueError):
+            transform(torch.randn(3, 1, 1, 1))
+
+    def test_transform_inplace(self):
+        transform = NormalizeVideo([10], [5], inplace=True)
+        pre_transform_tensor = torch.randn(1, 2, 3, 4)
+        post_transform_tensor = transform(pre_transform_tensor)
+
+        assert torch.equal(pre_transform_tensor, post_transform_tensor)
+
+    def test_transform_not_inplace(self):
+        transform = NormalizeVideo([10], [5], inplace=False)
+        pre_transform_tensor = torch.randn(1, 2, 3, 4)
+        post_transform_tensor = transform(pre_transform_tensor)
+
+        assert not torch.equal(pre_transform_tensor, post_transform_tensor)
+
     @pytest.mark.skipif(stats is None, reason="scipy.stats is not available")
     @given(st.integers(2, 4))
     def test_distribution_is_normal_after_transform(self, ndim):
@@ -301,6 +325,11 @@ class TestTimeToChannel:
         transformed_frames_shape = self.transform(frames).size()
 
         assert (50, 36, 24) == transformed_frames_shape
+
+    @pytest.mark.parametrize("ndim", [1, 2, 3, 5])
+    def test_raises_value_error_if_tensor_is_not_4d(self, ndim):
+        with pytest.raises(ValueError):
+            TimeToChannel()(torch.randn(*list(range(1, ndim + 1))))
 
     @given(tensor_video())
     def test_element_count_is_preserved(self, frames):

@@ -6,7 +6,7 @@
 2. Create the torchvideo environment:
 
    ```bash
-   $ conda env create -n torchvideo -f environment.yml
+   $ conda env create -n torchvideo -f environment.yaml
    $ conda activate torchvideo
    ```
 3. Check everything is installed properly by running the tests:

@@ -42,9 +42,9 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yaml
-  - cat environment.yaml
-  - conda env create -n torchvideo -f environment.yaml
+  - sed -i  "s/python=[0-9\.]\+/python=$TRAVIS_PYTHON_VERSION/g" environment.yml
+  - cat environment.yml
+  - conda env create -n torchvideo -f environment.yml
   - source activate torchvideo
   - pip install codecov
   - python setup.py install

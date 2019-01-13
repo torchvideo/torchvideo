@@ -54,3 +54,8 @@ GulpLabelSet
 ~~~~~~~~~~~~
 .. autoclass:: GulpLabelSet
     :special-members: __getitem__
+
+CsvLabelSet
+~~~~~~~~~~~
+.. autoclass:: CsvLabelSet
+    :special-members: __getitem__

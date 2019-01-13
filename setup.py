@@ -14,7 +14,7 @@ from setuptools import setup, Command, find_packages
 _here = os.path.dirname(__file__)
 print(_here)
 os.system("ls " + _here)
-about = {}
+about = {}  # type: ignore
 with open(os.path.join(_here, "src", "torchvideo", "__version__.py")) as f:
     exec(f.read(), about)
 
@@ -31,7 +31,7 @@ REQUIRED = [
 ]
 
 # What packages are optional?
-EXTRAS = {"visualisation": ["moviepy"]}
+EXTRAS = {"visualisation": ["moviepy"], "csv": ["pandas"]}
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------
@@ -42,7 +42,9 @@ EXTRAS = {"visualisation": ["moviepy"]}
 # Import the README and use it as the long-description.
 # Note: this will only work if 'README.md' is present in your MANIFEST.in file!
 try:
-    with io.open(os.path.join(_here, "README.md"), encoding="utf-8") as f:
+    with io.open(
+        os.path.join(_here, "README.md"), encoding="utf-8"
+    ) as f:  # type: ignore
         long_description = "\n" + f.read()
 except FileNotFoundError:
     long_description = about["__description__"]
@@ -52,7 +54,7 @@ class UploadCommand(Command):
     """Support setup.py upload."""
 
     description = "Build and publish the package."
-    user_options = []
+    user_options = []  # type: ignore
 
     @staticmethod
     def status(s):

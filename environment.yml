@@ -9,8 +9,9 @@ dependencies:
   - lintel=1.0
   - numpy=1.15.4
   - cuda90=1.0
+  - pandas==0.23.4
   - pytorch=0.4.1
-  - python=3.6.6
+  - python=3.6.8
   - pip=18.1
   - torchvision=0.2.1
   - pre_commit==1.13.0

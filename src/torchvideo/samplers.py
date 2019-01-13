@@ -74,13 +74,16 @@ class ClipSampler(FrameSampler):
         self.frame_step = frame_step
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
-        sample_length = compute_sample_length(self.clip_length, self.frame_step)
-        if video_length < sample_length:
+        if video_length <= 0:
             raise ValueError(
-                "Video ({} frames) is shorter than clip ({} frames)".format(
-                    video_length, sample_length
+                "Video must be at least 1 frame long but was {} frames long".format(
+                    video_length
                 )
             )
+        sample_length = compute_sample_length(self.clip_length, self.frame_step)
+        if video_length < sample_length:
+            return _oversample(video_length, sample_length)
+
         max_offset = video_length - sample_length
 
         start_index = 0 if max_offset == 0 else randint(0, max_offset)
@@ -240,9 +243,13 @@ class LambdaSampler(FrameSampler):
         frame_idx = self._fn(video_length)
         if not all([i < (video_length - 1) for i in frame_idx_to_list(frame_idx)]):
             raise ValueError(
-                "Invalid frame_idx {} from user provided sampler".format(frame_idx)
+                "Invalid frame_idx {} from user provided sampler for video of "
+                "length {}".format(frame_idx, video_length)
             )
         return frame_idx
+
+    def __repr__(self):
+        return self.__class__.__name__ + "(sampler={!r})".format(self._fn)
 
 
 def frame_idx_to_list(frames_idx: Union[slice, List[slice], List[int]]) -> List[int]:
@@ -301,3 +308,12 @@ def _slice_to_list(slice_: slice) -> List[int]:
     if stop is None:
         raise ValueError("Cannot convert slice with no stop attribute to a list")
     return list(range(start, stop, step))
+
+
+def _oversample(video_length: int, sample_length: int) -> List[int]:
+    assert (
+        sample_length > video_length
+    ), "No point oversampling a video that has more frames than the sample length"
+
+    missing_frames_count = sample_length - video_length
+    return ([0] * missing_frames_count) + list(range(0, video_length))

@@ -18,6 +18,10 @@ matrix:
       script:
       - flake8
       - mypy src/torchvideo
+    - env: NOTEBOOK_CHECK
+      python: "3.6"
+      script:
+      - './exampes/run-notebooks.sh'
 
     - python: "3.6"
       #    - python: "3.6"

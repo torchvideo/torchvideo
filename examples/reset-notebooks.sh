@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 NOTEBOOK_DIR="$(dirname $(readlink -f $0))"
 set -ex
 

@@ -21,7 +21,7 @@ matrix:
     - env: NOTEBOOK_CHECK
       python: "3.6"
       script:
-      - './exampes/run-notebooks.sh'
+      - './examples/run-notebooks.sh'
 
     - python: "3.6"
       #    - python: "3.6"

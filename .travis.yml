@@ -21,6 +21,7 @@ matrix:
     - env: NOTEBOOK_CHECK
       python: "3.6"
       script:
+      - pip install jupyter
       - './examples/run-notebooks.sh'
 
     - python: "3.6"

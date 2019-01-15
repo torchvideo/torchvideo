@@ -72,6 +72,7 @@ class TestImageFolderVideoDatasetUnit:
     def test_transform_is_applied(self, dataset_dir):
         self.make_video_dirs(dataset_dir, 1)
         transform = Mock(side_effect=lambda frames: frames)
+
         dataset = ImageFolderVideoDataset(
             dataset_dir, "frame_{:05d}.jpg", transform=transform
         )
@@ -79,6 +80,24 @@ class TestImageFolderVideoDatasetUnit:
         frames = dataset[0]
 
         assert transform.called_once_with(frames)
+
+    @pytest.mark.skip("Implement target_transform support for transforms first")
+    def test_passes_target_to_transform_with_target_transform(self, dataset_dir):
+        self.make_video_dirs(dataset_dir, 1)
+
+        def transform(frames, target):
+            return frames, -1
+
+        dataset = ImageFolderVideoDataset(
+            dataset_dir,
+            "frame_{:05d}.jpg",
+            label_set=DummyLabelSet(1),
+            transform=transform,
+        )
+
+        frames, label = dataset[0]
+
+        assert label == -1
 
     @staticmethod
     def make_video_dirs(dataset_dir, video_count, frame_count=10):

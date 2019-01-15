@@ -1,4 +1,7 @@
+import itertools
 import numbers
+from abc import abstractmethod, ABC
+
 import numpy as np
 
 import PIL
@@ -13,20 +16,29 @@ from typing import (
     Iterable,
     Optional,
     cast,
+    TypeVar,
+    Generic,
 )
 
 import torch
 from PIL.Image import Image
 import torchvision.transforms.functional as F
-import torchvision.transforms.transforms as T
+import torchvision.transforms.transforms as tv
 from . import functional as VF
 from collections import namedtuple
 
 
 ImageShape = namedtuple("ImageSize", ["height", "width"])
+InputFramesType = TypeVar("InputFramesType")
+OutputFramesType = TypeVar("OutputFramesType")
+ParamsType = TypeVar("ParamsType")
+
+PILVideo = Union[Iterable[Image], Iterator[Image]]
+PILVideoI = Iterator[Image]
+ImageSizeParam = Union[int, Tuple[int, int]]
 
 
-def _canonicalize_size(size: Union[int, Tuple[int, int]]) -> ImageShape:
+def _canonicalize_size(size: ImageSizeParam) -> ImageShape:
     """
 
     Args:
@@ -42,7 +54,9 @@ def _canonicalize_size(size: Union[int, Tuple[int, int]]) -> ImageShape:
         return ImageShape(size[0], size[1])
 
 
-def _to_iter(seq: Union[Iterator, Iterable]) -> Iterator:
+def _to_iter(
+    seq: Union[Iterator[InputFramesType], Iterable[InputFramesType]]
+) -> Iterator[InputFramesType]:
     try:
         return seq.__iter__()
     except AttributeError:
@@ -50,7 +64,65 @@ def _to_iter(seq: Union[Iterator, Iterable]) -> Iterator:
     return cast(Iterator, seq)
 
 
-class RandomCropVideo:
+def _peek_iter(
+    iterator: Iterator[InputFramesType]
+) -> Tuple[InputFramesType, Iterator[InputFramesType]]:
+    from itertools import chain
+
+    first_elem = next(iterator)
+    return first_elem, chain([first_elem], iterator)
+
+
+class _empty_target:
+    pass
+
+
+class FramesAndParams(Generic[InputFramesType, ParamsType]):
+    def __init__(self, frames: InputFramesType, params: ParamsType):
+        self.frames = frames
+        self.params = params
+
+
+class Transform(Generic[InputFramesType, OutputFramesType, ParamsType], ABC):
+    def __call__(self, frames, target=_empty_target):
+        if isinstance(frames, Iterator):
+            frames, frames_copy = itertools.tee(frames)
+        else:
+            frames_copy = frames
+
+        maybe_params = self._gen_params(frames_copy)
+        if isinstance(maybe_params, FramesAndParams):
+            params = maybe_params.params
+            frames = maybe_params.frames
+        else:
+            params = maybe_params
+
+        transformed_frames = self._transform(frames, params)
+
+        if target is _empty_target:
+            return transformed_frames
+
+        return transformed_frames, target
+
+    @abstractmethod
+    def _gen_params(
+        self, frames: InputFramesType
+    ) -> Union[ParamsType, FramesAndParams[InputFramesType, ParamsType]]:
+        pass
+
+    @abstractmethod
+    def _transform(
+        self, frames: InputFramesType, params: ParamsType
+    ) -> OutputFramesType:
+        pass
+
+
+class StatelessTransform(Transform[InputFramesType, OutputFramesType, None], ABC):
+    def _gen_params(self, frames: InputFramesType) -> None:
+        return None
+
+
+class RandomCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]]):
     """Crop the given Video (composed of PIL Images) at a random location.
 
     Args:
@@ -90,25 +162,25 @@ class RandomCropVideo:
         fill: int = 0,
         padding_mode: str = "constant",
     ):
+        super().__init__()
         self.size = _canonicalize_size(size)
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def __call__(
-        self, frames: Union[Iterator[Image], Iterable[Image]]
-    ) -> Iterator[Image]:
+    def _gen_params(self, frames: PILVideo) -> Tuple[int, int, int, int]:
         frames = _to_iter(frames)
-        frame = self._maybe_pad(next(frames))
-        i, j, h, w = T.RandomCrop.get_params(frame, self.size)
+        first_frame, frames = _peek_iter(frames)
+        first_frame = self._maybe_pad(first_frame)
+        params = tv.RandomCrop.get_params(first_frame, self.size)
+        return params
 
-        yield F.crop(frame, i, j, h, w)
+    def _transform(
+        self, frames: PILVideo, params: Tuple[int, int, int, int]
+    ) -> PILVideoI:
         for frame in frames:
-            yield self._transform_img(frame, i, j, h, w)
-
-    def _transform_img(self, frame: Image, i: int, j: int, h: int, w: int) -> Image:
-        return F.crop(self._maybe_pad(frame), i, j, h, w)
+            yield F.crop(self._maybe_pad(frame), *params)
 
     def _maybe_pad(self, frame: Image):
         if self.padding is not None:
@@ -141,7 +213,7 @@ class RandomCropVideo:
         )
 
 
-class CenterCropVideo:
+class CenterCropVideo(Transform[PILVideo, Iterator[Image], None]):
     """Crops the given video (composed of PIL Images) at the center of the frame.
 
     Args:
@@ -151,17 +223,21 @@ class CenterCropVideo:
     """
 
     def __init__(self, size: Union[Tuple[int, int], int]):
-        self._image_transform = T.CenterCrop(size)
+        super().__init__()
+        self._image_transform = tv.CenterCrop(size)
 
-    def __call__(self, frames: Iterator[Image]) -> Iterator[Image]:
-        for frame in frames:
-            yield self._image_transform(frame)
+    def _gen_params(self, frames):
+        return None
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + "(size={0})".format(self._image_transform.size)
 
+    def _transform(self, frames: PILVideo, params):
+        for frame in frames:
+            yield self._image_transform(frame)
 
-class RandomHorizontalFlipVideo:
+
+class RandomHorizontalFlipVideo(Transform[PILVideo, Iterator[Image], bool]):
     """Horizontally flip the given video (composed of PIL Images) randomly with a given
     probability :math:`p`.
 
@@ -172,13 +248,14 @@ class RandomHorizontalFlipVideo:
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(
-        self, frames: Union[Iterator[Image], Iterable[Image]]
-    ) -> Iterator[Image]:
+    def _gen_params(self, frames: PILVideo) -> bool:
         if random.random() < self.p:
-            flip = True
+            return True
         else:
-            flip = False
+            return False
+
+    def _transform(self, frames: PILVideo, params: bool) -> Iterator[Image]:
+        flip = params
         for frame in frames:
             if flip:
                 yield F.hflip(frame)
@@ -189,7 +266,7 @@ class RandomHorizontalFlipVideo:
         return self.__class__.__name__ + "(p={})".format(self.p)
 
 
-class NormalizeVideo:
+class NormalizeVideo(Transform[torch.Tensor, torch.Tensor, None]):
     r"""
 
     Normalise ``torch.*Tensor`` :math:`t` given mean:
@@ -221,7 +298,15 @@ class NormalizeVideo:
         if isinstance(std, Sequence) and any([s == 0 for s in std]):
             raise ValueError("std {} contained 0 value, cannot be 0".format(std))
 
-    def __call__(self, frames: torch.Tensor) -> torch.Tensor:
+    def _gen_params(self, frames: torch.Tensor) -> None:
+        return None
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + "(mean={mean}, std={std})".format(
+            mean=self.mean, std=self.std
+        )
+
+    def _transform(self, frames: torch.Tensor, params: None) -> torch.Tensor:
         channel_count = frames.shape[0]
         mean = self._broadcast_to_seq(self.mean, channel_count)
         std = self._broadcast_to_seq(self.std, channel_count)
@@ -236,13 +321,8 @@ class NormalizeVideo:
         # else assume already a sequence
         return x
 
-    def __repr__(self) -> str:
-        return self.__class__.__name__ + "(mean={mean}, std={std})".format(
-            mean=self.mean, std=self.std
-        )
 
-
-class ResizeVideo:
+class ResizeVideo(StatelessTransform[PILVideo, PILVideoI]):
     """Resize the input video (composed of PIL Images) to the given size.
 
     Args:
@@ -262,18 +342,18 @@ class ResizeVideo:
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, frames: Iterator[Image]) -> Iterator[Image]:
-        for frame in frames:
-            yield F.resize(frame, self.size, self.interpolation)
-
     def __repr__(self):
-        interpolate_str = T._pil_interpolation_to_str[self.interpolation]
+        interpolate_str = tv._pil_interpolation_to_str[self.interpolation]
         return self.__class__.__name__ + "(size={0!r}, interpolation={1})".format(
             self.size, interpolate_str
         )
 
+    def _transform(self, frames: PILVideo, params: None) -> PILVideoI:
+        for frame in frames:
+            yield F.resize(frame, self.size, self.interpolation)
 
-class MultiScaleCropVideo:
+
+class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]]):
     r"""Random crop the input video (composed of PIL Images) at one of the given
     scales or from a set of fixed crops, then resize to specified size.
 
@@ -302,6 +382,36 @@ class MultiScaleCropVideo:
             this setting.
     """
 
+    def _gen_params(
+        self, frames: PILVideo
+    ) -> FramesAndParams[PILVideo, Tuple[int, int, int, int]]:
+        if isinstance(frames, list):
+            frame = frames[0]
+        else:
+            assert isinstance(frames, Iterator)
+            frame = next(frames)
+            frames = itertools.chain([frame], frames)
+
+        h, w, i, j = self.get_params(
+            frame,
+            self.size,
+            self.scales,
+            max_distortion=self.max_distortion,
+            fixed_crops=self.fixed_crops,
+            more_fixed_crops=self.more_fixed_crops,
+        )
+        return FramesAndParams(frames, (h, w, i, j))
+
+    def _transform(
+        self, frames: PILVideo, params: Tuple[int, int, int, int]
+    ) -> PILVideoI:
+        h, w, i, j = params
+        for frame in frames:
+            yield F.resized_crop(
+                frame, i, j, h, w, self.size, interpolation=self.interpolation
+            )
+        pass
+
     def __init__(
         self,
         size,
@@ -318,26 +428,6 @@ class MultiScaleCropVideo:
         if self.more_fixed_crops and not self.fixed_crops:
             raise ValueError("fixed_crops must be True if using more_fixed_crops.")
         self.interpolation = PIL.Image.BILINEAR
-
-    def __call__(self, frames: Iterator[Image]) -> Iterator[Image]:
-        frames = _to_iter(frames)
-        frame = next(frames)
-
-        h, w, i, j = self.get_params(
-            frame,
-            self.size,
-            self.scales,
-            max_distortion=self.max_distortion,
-            fixed_crops=self.fixed_crops,
-            more_fixed_crops=self.more_fixed_crops,
-        )
-        yield F.resized_crop(
-            frame, i, j, h, w, self.size, interpolation=self.interpolation
-        )
-        for frame in frames:
-            yield F.resized_crop(
-                frame, i, j, h, w, self.size, interpolation=self.interpolation
-            )
 
     def __repr__(self):
         return (
@@ -447,7 +537,7 @@ class MultiScaleCropVideo:
         return offsets
 
 
-class RandomResizedCropVideo:
+class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]]):
     """Crop the given video (composed of PIL Images) to random size and aspect ratio.
 
     A crop of random scale (default: :math:`[0.08, 1.0]`) of the original size and a
@@ -463,6 +553,20 @@ class RandomResizedCropVideo:
             :py:meth:`PIL.Image.Image.resize` for other options).
     """
 
+    def _gen_params(
+        self, frames: PILVideo
+    ) -> FramesAndParams[PILVideo, Tuple[int, int, int, int]]:
+        frame, frames = _peek_iter(_to_iter(frames))
+        params = tv.RandomResizedCrop.get_params(frame, self.scale, self.ratio)
+        return FramesAndParams(frames=frames, params=params)
+
+    def _transform(
+        self, frames: PILVideo, params: Tuple[int, int, int, int]
+    ) -> PILVideoI:
+        i, j, h, w = params
+        for frame in frames:
+            yield self._transform_frame(frame, i, j, h, w)
+
     def __init__(
         self,
         size: Union[Tuple[int, int], int],
@@ -474,16 +578,6 @@ class RandomResizedCropVideo:
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
-
-    def __call__(
-        self, frames: Union[Iterator[Image], Iterable[Image]]
-    ) -> Iterator[Image]:
-        frames = _to_iter(frames)
-        frame = next(frames)
-        i, j, h, w = T.RandomResizedCrop.get_params(frame, self.scale, self.ratio)
-        yield self._transform_frame(frame, i, j, h, w)
-        for frame in frames:
-            yield self._transform_frame(frame, i, j, h, w)
 
     def __repr__(self):
         return (
@@ -501,20 +595,23 @@ class RandomResizedCropVideo:
         return F.resized_crop(frame, i, j, h, w, self.size, self.interpolation)
 
 
-class CollectFrames:
+class CollectFrames(Transform[PILVideo, List[Image], None]):
     """Collect frames from iterator into list.
 
     Used at the end of a sequence of PIL video transformations.
     """
 
-    def __call__(self, frames: Iterator[Image]) -> List[Image]:
+    def _gen_params(self, frames: PILVideo) -> None:
+        return None
+
+    def _transform(self, frames: PILVideo, params: None) -> List[Image]:
         return list(frames)
 
     def __repr__(self):
         return self.__class__.__name__ + "()"
 
 
-class PILVideoToTensor:
+class PILVideoToTensor(Transform[PILVideo, torch.Tensor, None]):
     r"""Convert a list of PIL Images to a tensor :math:`(C, T, H, W)`."""
 
     def __init__(self, rescale=True):
@@ -526,7 +623,10 @@ class PILVideoToTensor:
         """
         self.rescale = rescale
 
-    def __call__(self, frames: Union[Iterable[Image], Iterator[Image]]) -> torch.Tensor:
+    def _gen_params(self, frames: PILVideo) -> None:
+        return None
+
+    def _transform(self, frames: PILVideo, params: None) -> torch.Tensor:
         # PIL Images are in the format (H, W, C)
         # F.to_tensor converts (H, W, C) to (C, H, W)
         # Since we have a list of these tensors, when we stack them we get shape
@@ -544,7 +644,7 @@ class PILVideoToTensor:
         return self.__class__.__name__ + "()"
 
 
-class NDArrayToPILVideo:
+class NDArrayToPILVideo(Transform[np.ndarray, PILVideoI, None]):
     """Convert :py:class:`numpy.ndarray` of the format :math:`(T, H, W, C)` or :math:`(
     C, T, H, W)` to a PIL video (an iterator of PIL images)
     """
@@ -562,18 +662,20 @@ class NDArrayToPILVideo:
             )
         self.format = format
 
-    def __call__(self, frames: np.ndarray) -> Iterator[Image]:
+    def _transform(self, frames: np.ndarray, params: None) -> PILVideoI:
         if self.format == "cthw":
             frames = np.moveaxis(frames, 0, -1)
-
         for frame in frames:
             yield PIL.Image.fromarray(frame)
+
+    def _gen_params(self, frames: np.ndarray) -> None:
+        return None
 
     def __repr__(self):
         return self.__class__.__name__ + "(format={!r})".format(self.format)
 
 
-class TimeApply:
+class TimeApply(StatelessTransform[PILVideo, PILVideoI]):
     """Apply a PIL Image transform across time.
 
     See :std:doc:`torchvision/transforms` for suitable *deterministic*
@@ -592,19 +694,20 @@ class TimeApply:
         """
         self.img_transform = img_transform
 
-    def __call__(
-        self, frames: Union[Iterable[Image], Iterator[Image]]
-    ) -> Iterator[Image]:
+    def _transform(self, frames: PILVideo, params: None) -> PILVideoI:
         for frame in frames:
             yield self.img_transform(frame)
 
 
-class TimeToChannel:
+class TimeToChannel(Transform[torch.Tensor, torch.Tensor, None]):
     r"""Combine time dimension into the channel dimension by reshaping video tensor of
     shape :math:`(C, T, H, W)` into :math:`(C \times T, H, W)`
     """
 
-    def __call__(self, frames: torch.Tensor) -> torch.Tensor:
+    def _gen_params(self, frames: torch.Tensor) -> None:
+        return None
+
+    def _transform(self, frames: torch.Tensor, params: None):
         return VF.time_to_channel(frames)
 
     def __repr__(self):

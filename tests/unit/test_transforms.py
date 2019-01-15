@@ -1,5 +1,5 @@
 import itertools
-import random
+from unittest.mock import Mock, call
 
 import PIL.Image
 import numpy as np
@@ -7,7 +7,7 @@ from random import randint
 
 import pytest
 import torch
-from hypothesis import given, assume, note
+from hypothesis import given, note
 import hypothesis.strategies as st
 from torchvision.transforms import Compose
 
@@ -27,8 +27,20 @@ from torchvideo.transforms import (
     TimeToChannel,
     MultiScaleCropVideo,
     ImageShape,
+    TimeApply,
+    ResizeVideo,
+    RandomResizedCropVideo,
 )
 from unit.strategies import pil_video, tensor_video, video_shape
+
+pil_interpolation_settings = [
+    PIL.Image.NEAREST,
+    PIL.Image.BOX,
+    PIL.Image.BILINEAR,
+    PIL.Image.HAMMING,
+    PIL.Image.BICUBIC,
+    PIL.Image.LANCZOS,
+]
 
 
 def prod(seq):
@@ -38,6 +50,14 @@ def prod(seq):
     for el in seq[1:]:
         product *= el
     return product
+
+
+def assert_preserves_label(transform, video):
+    class my_label:
+        pass
+
+    frames, transformed_label = transform(video, my_label)
+    assert transformed_label == my_label
 
 
 class TestRandomCropVideo:
@@ -83,6 +103,11 @@ class TestRandomCropVideo:
         for frame in transformed_video:
             assert (frame.size[1], frame.size[0]) == crop_size
 
+    def test_propagates_label_unchanges(self):
+        video = pil_video(min_width=2, min_height=2).example()
+        transform = RandomCropVideo(1)
+        assert_preserves_label(transform, video)
+
 
 class TestCenterCropVideo:
     def test_repr(self):
@@ -95,6 +120,12 @@ class TestCenterCropVideo:
         transform = CenterCropVideo(crop_size)
         for frame in transform(video):
             assert (frame.size[1], frame.size[0]) == crop_size
+
+    def test_propagates_label_unchanged(self):
+        video = pil_video(min_width=2, min_height=2).example()
+        transform = CenterCropVideo(1)
+
+        assert_preserves_label(transform, video)
 
 
 class TestRandomHorizontalFlipVideo:
@@ -122,6 +153,12 @@ class TestRandomHorizontalFlipVideo:
             assert frame.size == transformed_frame.size
             assert frame.mode == transformed_frame.mode
             assert np.all(np.array(frame) == np.array(transformed_frame))
+
+    def test_propagates_label_unchanged(self):
+        video = pil_video(min_width=2, min_height=2).example()
+        transform = RandomHorizontalFlipVideo(0.5)
+
+        assert_preserves_label(transform, video)
 
 
 class TestNormalizeVideo:
@@ -219,6 +256,13 @@ class TestNormalizeVideo:
         output_channel_count = transformed_video.size(0)
         assert input_channel_count == output_channel_count
 
+    def test_propagates_label_unchanged(self):
+        video = tensor_video(min_width=1, min_height=1).example()
+        channel_count = video.shape[0]
+        transform = NormalizeVideo(torch.ones(channel_count), torch.ones(channel_count))
+
+        assert_preserves_label(transform, video)
+
 
 class TestCollectFrames:
     def test_repr(self):
@@ -228,6 +272,12 @@ class TestCollectFrames:
     def test_collect_frames_make_list_from_iterator(self, video):
         transform = CollectFrames()
         assert transform(iter(video)) == video
+
+    def test_propagates_label_unchanged(self):
+        video = pil_video(min_width=1, min_height=1).example()
+        transform = CollectFrames()
+
+        assert_preserves_label(transform, iter(video))
 
 
 class TestPILVideoToTensor:
@@ -264,6 +314,12 @@ class TestPILVideoToTensor:
 
         assert tensor.min().item() == 0
         assert tensor.max().item() == 255
+
+    def test_propagates_label_unchanged(self):
+        video = pil_video(min_width=1, min_height=1).example()
+        transform = PILVideoToTensor()
+
+        assert_preserves_label(transform, video)
 
 
 class TestNDArrayToPILVideo:
@@ -308,6 +364,12 @@ class TestNDArrayToPILVideo:
             ):
                 NDArrayToPILVideo(format=invalid_format)
 
+    def test_propagates_label_unchanged(self):
+        video = self.make_uint8_ndarray((3, 1, 2, 2))
+        transform = NDArrayToPILVideo(format="cthw")
+
+        assert_preserves_label(transform, video)
+
     @staticmethod
     def make_uint8_ndarray(shape):
         return np.random.randint(0, 255, size=shape, dtype=np.uint8)
@@ -345,6 +407,12 @@ class TestTimeToChannel:
         transformed_frames_size = self.transform(frames)
 
         assert frames.size(0) <= transformed_frames_size.size(0)
+
+    def test_propagates_label_unchanged(self):
+        video = tensor_video().example()
+        transform = TimeToChannel()
+
+        assert_preserves_label(transform, video)
 
 
 class TestMultiScaleCropVideo:
@@ -396,3 +464,78 @@ class TestMultiScaleCropVideo:
             "fixed_crops=False, "
             "more_fixed_crops=False)"
         )
+
+    def test_propagates_label_unchanged(self):
+        video = pil_video(min_height=2, min_width=2).example()
+        transform = MultiScaleCropVideo((1, 1), scales=(1,))
+
+        assert_preserves_label(transform, video)
+
+
+class TestTimeApply:
+    @given(pil_video(min_length=1, max_length=5))
+    def test_applies_given_transform_for_each_frame(self, frames):
+        mock_transform = Mock(side_effect=lambda frames: frames)
+        transform = TimeApply(mock_transform)
+        expected_calls = [call(frame) for frame in frames]
+
+        transformed_frames = list(transform(frames))
+
+        assert len(transformed_frames) == len(frames)
+        assert transformed_frames == frames
+        assert mock_transform.mock_calls == expected_calls
+
+    def test_propagates_label_unchanged(self):
+        stub_transform = lambda frames: frames
+        frames = pil_video().example()
+
+        transform = TimeApply(stub_transform)
+
+        assert_preserves_label(transform, frames)
+
+
+class TestResizeVideo:
+    @given(pil_video(), st.sampled_from(pil_interpolation_settings), st.data())
+    def test_resizes_to_given_size(self, video, interpolation, data):
+        width, height = video[0].size
+        expected_width = data.draw(st.integers(min_value=1, max_value=width))
+        expected_height = data.draw(st.integers(min_value=1, max_value=height))
+        transform = ResizeVideo(
+            size=(expected_height, expected_width), interpolation=interpolation
+        )
+
+        transformed_video = list(transform(video))
+        assert len(transformed_video) == len(video)
+        for frame in transformed_video:
+            assert (expected_width, expected_height) == frame.size
+
+    def test_propagates_label_unchanged(self):
+        frames = pil_video().example()
+
+        transform = ResizeVideo((1, 1))
+
+        assert_preserves_label(transform, frames)
+
+
+class TestRandomResizedCropVideo:
+    @given(pil_video(), st.sampled_from(pil_interpolation_settings), st.data())
+    def test_resulting_video_are_specified_size(self, video, interpolation, data):
+        width, height = video[0].size
+        expected_width = data.draw(st.integers(min_value=1, max_value=width))
+        expected_height = data.draw(st.integers(min_value=1, max_value=height))
+        transform = RandomResizedCropVideo(
+            (expected_height, expected_width), interpolation=interpolation
+        )
+
+        transformed_video = list(transform(video))
+
+        assert len(transformed_video) == len(video)
+        for frame in transformed_video:
+            assert (expected_width, expected_height) == frame.size
+
+    def test_propagates_label_unchanged(self):
+        frames = pil_video().example()
+
+        transform = RandomResizedCropVideo((1, 1))
+
+        assert_preserves_label(transform, frames)

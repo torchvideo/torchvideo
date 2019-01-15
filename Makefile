@@ -17,7 +17,7 @@ functional_test:
 
 .PHONY: doctest
 doctest:
-	COVERAGE_FILE=.coverage-doctest PYTHONPATH=$(PYTHONPATH) pytest src
+	COVERAGE_FILE=.coverage-doctest PYTHONPATH=$(PYTHONPATH) pytest --doctest-modules src
 
 
 .PHONY: docs

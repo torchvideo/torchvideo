@@ -1,5 +1,7 @@
 import itertools
-from unittest.mock import Mock, call
+from abc import ABC
+from typing import List, Tuple, Callable, Any
+from unittest.mock import Mock, call, MagicMock
 
 import PIL.Image
 import numpy as np
@@ -9,7 +11,7 @@ import pytest
 import torch
 from hypothesis import given, note
 import hypothesis.strategies as st
-from torchvision.transforms import Compose
+from torchvideo.transforms import Compose, namedtuple
 
 try:
     from scipy import stats
@@ -539,3 +541,121 @@ class TestRandomResizedCropVideo:
         transform = RandomResizedCropVideo((1, 1))
 
         assert_preserves_label(transform, frames)
+
+
+class TestCompose:
+    def test_calls_frames_only_transforms_sequentially(self):
+        frames = pil_video().example()
+        transforms, results = self.gen_transforms(5)
+        composed_transform = Compose(transforms)
+
+        transformed_frames = composed_transform(frames)
+
+        transforms[0].assert_called_once_with(frames)
+        transforms[1].assert_called_once_with(results[0])
+        transforms[2].assert_called_once_with(results[1])
+        transforms[3].assert_called_once_with(results[2])
+        transforms[4].assert_called_once_with(results[3])
+        assert transformed_frames == results[-1]
+
+    def test_passes_target_to_supporting_transforms(self):
+        results = [
+            self.make_result_class("transform_result_0"),
+            self.make_result_class("transform_result_1"),
+            self.make_result_class("transform_result_2"),
+        ]
+        transforms = [
+            MockFramesOnlyTransform(results[0]),
+            MockFramesAndOptionalTargetTransform(results[1], target_return_value=-2),
+            MockFramesAndRequiredTargetTransform(results[2], target_return_value=-3),
+        ]
+        composed_transform = Compose(transforms)
+        frames = pil_video().example()
+
+        target = -1
+        transformed_frames, transformed_target = composed_transform(frames, target)
+
+        transforms[0].assert_called_once_with(frames)
+        transforms[1].assert_called_once_with(results[0], target=target)
+        transforms[2].assert_called_once_with(results[1], -2)
+        assert results[-1] == transformed_frames
+        assert transformed_target == -3
+
+    def test_raises_error_if_target_is_not_passed_when_a_transform_requires_target(
+        self
+    ):
+        transforms = [
+            MockFramesAndRequiredTargetTransform(None, None, name="MyTransform")
+        ]
+        composed_transform = Compose(transforms)
+        frames = pil_video().example()
+
+        with pytest.raises(TypeError, match="MyTransform"):
+            composed_transform(frames)
+
+    def gen_transforms(self, count: int) -> Tuple[List[Mock], List[Any]]:
+        transforms = []
+        results = []
+        for i in range(count):
+            result_class_name = "transform_result_{}".format(i)
+            result = self.make_result_class(result_class_name)
+            transform = MockFramesOnlyTransform(return_value=result)
+            transforms.append(transform)
+            results.append(result)
+        return transforms, results
+
+    def make_result_class(self, result_class_name):
+        return type(result_class_name, (), {})
+
+
+class MockTransform:
+    def __init__(self, return_value, name=None):
+        self.calls = []
+        self.return_value = return_value
+        self.name = name
+
+    def assert_called_once_with(self, *args, **kwargs):
+        assert len(self.calls) == 1
+        expected_call = call(*args, **kwargs)
+        assert expected_call in self.calls
+
+    def __repr__(self):
+        if self.name is not None:
+            return self.name + "()"
+        else:
+            return super().__repr__()
+
+
+class _empty_target:
+    pass
+
+
+class MockFramesOnlyTransform(MockTransform):
+    def __call__(self, frames):
+        self.calls.append(call(frames))
+        return self.return_value
+
+
+class MockFramesAndOptionalTargetTransform(MockTransform):
+    def __init__(self, frames_return_value, target_return_value=_empty_target):
+        super().__init__(frames_return_value)
+        self.target_return_value = target_return_value
+
+    def __call__(self, frames, target=_empty_target):
+        self.calls.append(call(frames, target=target))
+        if target is _empty_target:
+            return self.return_value
+        else:
+            return self.return_value, self.target_return_value
+
+
+class MockFramesAndRequiredTargetTransform(MockTransform):
+    def __init__(
+        self, frames_return_value, target_return_value=_empty_target, name=None
+    ):
+        super().__init__(frames_return_value, name=name)
+        self.target_return_value = target_return_value
+
+    def __call__(self, frames, target):
+        self.calls.append(call(frames, target))
+        return self.return_value, self.target_return_value

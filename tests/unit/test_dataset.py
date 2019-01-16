@@ -7,6 +7,7 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 
 import torchvideo
+import torchvideo.internal.readers
 from torchvideo.datasets import (
     ImageFolderVideoDataset,
     VideoFolderDataset,
@@ -14,6 +15,11 @@ from torchvideo.datasets import (
     LambdaLabelSet,
 )
 from torchvideo.samplers import frame_idx_to_list
+from unit.mock_transforms import (
+    MockFramesAndOptionalTargetTransform,
+    MockTransform,
+    MockFramesOnlyTransform,
+)
 
 
 @pytest.fixture
@@ -71,7 +77,7 @@ class TestImageFolderVideoDatasetUnit:
 
     def test_transform_is_applied(self, dataset_dir):
         self.make_video_dirs(dataset_dir, 1)
-        transform = Mock(side_effect=lambda frames: frames)
+        transform = MockFramesOnlyTransform(lambda frames: frames)
 
         dataset = ImageFolderVideoDataset(
             dataset_dir, "frame_{:05d}.jpg", transform=transform
@@ -79,25 +85,22 @@ class TestImageFolderVideoDatasetUnit:
 
         frames = dataset[0]
 
-        assert transform.called_once_with(frames)
+        transform.assert_called_once_with(frames)
 
-    @pytest.mark.skip("Implement target_transform support for transforms first")
-    def test_passes_target_to_transform_with_target_transform(self, dataset_dir):
+    def test_transform_is_passed_target_if_it_supports_it(self, dataset_dir):
         self.make_video_dirs(dataset_dir, 1)
-
-        def transform(frames, target):
-            return frames, -1
-
+        transform = MockFramesAndOptionalTargetTransform(lambda f: f, lambda t: t)
         dataset = ImageFolderVideoDataset(
             dataset_dir,
             "frame_{:05d}.jpg",
-            label_set=DummyLabelSet(1),
             transform=transform,
+            label_set=DummyLabelSet(1),
         )
 
-        frames, label = dataset[0]
+        frames, target = dataset[0]
 
-        assert label == -1
+        assert target == 1
+        transform.assert_called_once_with(frames, target=target)
 
     @staticmethod
     def make_video_dirs(dataset_dir, video_count, frame_count=10):
@@ -154,14 +157,34 @@ class TestVideoFolderDatasetUnit:
         )
         video_count = 10
         self.make_video_files(dataset_dir, fs, video_count)
-        mock_transform = Mock(side_effect=lambda frames: frames)
+        transform = MockFramesOnlyTransform(lambda frames: frames)
         dataset = VideoFolderDataset(
-            dataset_dir, transform=mock_transform, frame_counter=lambda p: 20
+            dataset_dir, transform=transform, frame_counter=lambda p: 20
         )
 
         frames = dataset[0]
 
-        mock_transform.assert_called_once_with(frames)
+        transform.assert_called_once_with(frames)
+
+    def test_transform_is_passed_target_if_it_supports_it(
+        self, dataset_dir, fs, monkeypatch
+    ):
+        monkeypatch.setattr(
+            torchvideo.internal.readers, "default_loader", lambda file, idx: file
+        )
+        self.make_video_files(dataset_dir, fs, 1)
+        transform = MockFramesAndOptionalTargetTransform(lambda f: f, lambda t: t)
+        dataset = VideoFolderDataset(
+            dataset_dir,
+            transform=transform,
+            label_set=DummyLabelSet(1),
+            frame_counter=lambda p: 20,
+        )
+
+        frames, target = dataset[0]
+
+        assert target == 1
+        transform.assert_called_once_with(frames, target=target)
 
     @staticmethod
     def make_video_files(dataset_dir, fs, video_count):

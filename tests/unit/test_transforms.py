@@ -1,7 +1,6 @@
 import itertools
-from abc import ABC
-from typing import List, Tuple, Callable, Any
-from unittest.mock import Mock, call, MagicMock
+from typing import List, Tuple, Any
+from unittest.mock import Mock, call
 
 import PIL.Image
 import numpy as np
@@ -11,7 +10,12 @@ import pytest
 import torch
 from hypothesis import given, note
 import hypothesis.strategies as st
-from torchvideo.transforms import Compose, namedtuple
+from torchvideo.transforms import Compose
+from unit.mock_transforms import (
+    MockFramesOnlyTransform,
+    MockFramesAndOptionalTargetTransform,
+    MockFramesAndRequiredTargetTransform,
+)
 
 try:
     from scipy import stats
@@ -559,11 +563,7 @@ class TestCompose:
         assert transformed_frames == results[-1]
 
     def test_passes_target_to_supporting_transforms(self):
-        results = [
-            self.make_result_class("transform_result_0"),
-            self.make_result_class("transform_result_1"),
-            self.make_result_class("transform_result_2"),
-        ]
+        results = ["transform_result_0", "transform_result_1", "transform_result_2"]
         transforms = [
             MockFramesOnlyTransform(results[0]),
             MockFramesAndOptionalTargetTransform(results[1], target_return_value=-2),
@@ -597,8 +597,7 @@ class TestCompose:
         transforms = []
         results = []
         for i in range(count):
-            result_class_name = "transform_result_{}".format(i)
-            result = self.make_result_class(result_class_name)
+            result = "transform_result_{}".format(i)
             transform = MockFramesOnlyTransform(return_value=result)
             transforms.append(transform)
             results.append(result)
@@ -606,56 +605,3 @@ class TestCompose:
 
     def make_result_class(self, result_class_name):
         return type(result_class_name, (), {})
-
-
-class MockTransform:
-    def __init__(self, return_value, name=None):
-        self.calls = []
-        self.return_value = return_value
-        self.name = name
-
-    def assert_called_once_with(self, *args, **kwargs):
-        assert len(self.calls) == 1
-        expected_call = call(*args, **kwargs)
-        assert expected_call in self.calls
-
-    def __repr__(self):
-        if self.name is not None:
-            return self.name + "()"
-        else:
-            return super().__repr__()
-
-
-class _empty_target:
-    pass
-
-
-class MockFramesOnlyTransform(MockTransform):
-    def __call__(self, frames):
-        self.calls.append(call(frames))
-        return self.return_value
-
-
-class MockFramesAndOptionalTargetTransform(MockTransform):
-    def __init__(self, frames_return_value, target_return_value=_empty_target):
-        super().__init__(frames_return_value)
-        self.target_return_value = target_return_value
-
-    def __call__(self, frames, target=_empty_target):
-        self.calls.append(call(frames, target=target))
-        if target is _empty_target:
-            return self.return_value
-        else:
-            return self.return_value, self.target_return_value
-
-
-class MockFramesAndRequiredTargetTransform(MockTransform):
-    def __init__(
-        self, frames_return_value, target_return_value=_empty_target, name=None
-    ):
-        super().__init__(frames_return_value, name=name)
-        self.target_return_value = target_return_value
-
-    def __call__(self, frames, target):
-        self.calls.append(call(frames, target))
-        return self.return_value, self.target_return_value

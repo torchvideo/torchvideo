@@ -5,8 +5,12 @@ import numpy as np
 import pytest
 
 from tests import TEST_DATA_ROOT
-from torchvideo.datasets import GulpVideoDataset
+from torchvideo.datasets import GulpVideoDataset, DummyLabelSet
 from torchvideo.samplers import LambdaSampler
+from unit.mock_transforms import (
+    MockFramesAndOptionalTargetTransform,
+    MockFramesOnlyTransform,
+)
 
 
 @pytest.fixture(scope="module")
@@ -98,13 +102,24 @@ class TestGulpVideoDataset:
         assert vid.ndim == 4
 
     def test_transform_is_called(self, gulp_dir):
-        transform = Mock(side_effect=lambda frames: frames)
+        transform = MockFramesOnlyTransform(lambda frames: frames)
         dataset = GulpVideoDataset(gulp_dir, transform=transform)
 
         frames, _ = dataset[0]
 
         assert frames is not None
-        assert transform.called_once_with(frames)
+        transform.assert_called_once_with(frames)
+
+    def test_transform_is_passed_target_if_it_supports_it(self, gulp_dir):
+        transform = MockFramesAndOptionalTargetTransform(lambda f: f, lambda t: t)
+        dataset = GulpVideoDataset(
+            gulp_dir, transform=transform, label_set=DummyLabelSet(1)
+        )
+
+        frames, target = dataset[0]
+
+        assert target == 1
+        transform.assert_called_once_with(frames, target=target)
 
     def test_labels_are_accessible(self, gulp_dataset):
         assert len(gulp_dataset.labels) == self.video_count

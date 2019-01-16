@@ -11,7 +11,7 @@ import torch.utils.data
 from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.samplers import FrameSampler, FullVideoSampler, frame_idx_to_list
 from torchvideo.transforms import PILVideoToTensor
-
+from torchvideo.transforms.transforms import _supports_target
 
 Label = Any
 
@@ -21,6 +21,10 @@ NDArrayVideoTransform = Callable[[np.ndarray], torch.Tensor]
 
 
 _default_sampler = FullVideoSampler
+
+
+class _empty_label:
+    pass
 
 
 class LabelSet(ABC):  # pragma: no cover
@@ -90,6 +94,12 @@ class VideoDataset(torch.utils.data.Dataset):
         raise NotImplementedError()
 
 
+def _invoke_transform(transform, frames, label):
+    if _supports_target(transform):
+        return transform(frames, label)
+    return transform(frames), label
+
+
 class ImageFolderVideoDataset(VideoDataset):
     """Dataset stored as a folder containing folders of images, where each folder
     represents a video.
@@ -146,6 +156,8 @@ class ImageFolderVideoDataset(VideoDataset):
         self.labels = self._label_examples(self.video_dirs, label_set)
         self.video_lengths = self._measure_video_lengths(self.video_dirs, frame_counter)
         self.filename_template = filename_template
+        if self.transform is None:
+            self.transform = PILVideoToTensor()
 
     def __len__(self) -> int:
         return len(self.video_dirs)
@@ -157,16 +169,16 @@ class ImageFolderVideoDataset(VideoDataset):
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_folder)
-        if self.transform is None:
-            frames_tensor = PILVideoToTensor()(frames)
-        else:
-            frames_tensor = self.transform(frames)
-
         if self.labels is not None:
             label = self.labels[index]
-            return frames_tensor, label
         else:
+            label = _empty_label
+
+        frames_tensor, label = _invoke_transform(self.transform, frames, label)
+
+        if label == _empty_label:
             return frames_tensor
+        return frames_tensor, label
 
     @staticmethod
     def _measure_video_lengths(
@@ -257,13 +269,17 @@ class VideoFolderDataset(VideoDataset):
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_file)
-        if self.transform is not None:
-            frames = self.transform(frames)
 
         if self.labels is not None:
-            return frames, self.labels[index]
+            label = self.labels[index]
         else:
+            label = _empty_label
+
+        frames, label = _invoke_transform(self.transform, frames, label)
+
+        if label is _empty_label:
             return frames
+        return frames, label
 
     def __len__(self):
         return len(self.video_paths)
@@ -342,6 +358,11 @@ class GulpVideoDataset(VideoDataset):
         """
         from gulpio import GulpDirectory
 
+        if transform is None:
+
+            def transform(frames):
+                return torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255)
+
         self.gulp_dir = GulpDirectory(str(root_path))
         label_set = self._get_label_set(self.gulp_dir, label_field, label_set)
         super().__init__(
@@ -390,16 +411,16 @@ class GulpVideoDataset(VideoDataset):
                 "List[slice], List[int]".format(type(frame_idx).__name__)
             )
 
-        if self.transform is not None:
-            frames = self.transform(frames)
-        else:
-            frames = torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255)
-
         if self.labels is not None:
             label = self.labels[index]
-            return frames, label
         else:
-            return frames
+            label = _empty_label
+
+        frames, label = _invoke_transform(self.transform, frames, label)
+
+        if label is not _empty_label:
+            return frames, label
+        return frames
 
     @staticmethod
     def _get_video_ids(

@@ -718,7 +718,7 @@ class TimeToChannel(Transform[torch.Tensor, torch.Tensor, None]):
 def _supports_target(transform):
     sig = signature(transform)
     parameters = sig.parameters
-    return len(parameters) > 1
+    return len(parameters) >= 2
 
 
 def _requires_target(transform):

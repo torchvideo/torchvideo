@@ -72,6 +72,11 @@ class VideoDataset(torch.utils.data.Dataset):
         """The labels corresponding to the examples in the dataset. To get the label
         for example at index ``i`` you simple call ``dataset.labels[i]``, although
         this will be returned by ``__getitem__`` if this field is not None."""
+        """The unique ID of each video (usually a path is possible)"""
+
+    @property
+    def video_ids(self):
+        raise NotImplementedError()
 
     def __getitem__(
         self, index: int
@@ -150,22 +155,28 @@ class ImageFolderVideoDataset(VideoDataset):
                 frames in a dataset.
         """
         super().__init__(root_path, label_set, sampler=sampler, transform=transform)
-        self.video_dirs = sorted(
+        self._video_dirs = sorted(
             [d for d in self.root_path.iterdir() if filter is None or filter(d)]
         )
-        self.labels = self._label_examples(self.video_dirs, label_set)
-        self.video_lengths = self._measure_video_lengths(self.video_dirs, frame_counter)
+        self.labels = self._label_examples(self._video_dirs, label_set)
+        self.video_lengths = self._measure_video_lengths(
+            self._video_dirs, frame_counter
+        )
         self.filename_template = filename_template
         if self.transform is None:
             self.transform = PILVideoToTensor()
 
+    @property
+    def video_ids(self):
+        return self._video_dirs
+
     def __len__(self) -> int:
-        return len(self.video_dirs)
+        return len(self._video_dirs)
 
     def __getitem__(
         self, index: int
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
-        video_folder = self.video_dirs[index]
+        video_folder = self._video_dirs[index]
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_folder)
@@ -254,18 +265,22 @@ class VideoFolderDataset(VideoDataset):
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform
         )
-        self.video_paths = self._get_video_paths(self.root_path, filter)
-        self.labels = self._label_examples(self.video_paths, label_set)
+        self._video_paths = self._get_video_paths(self.root_path, filter)
+        self.labels = self._label_examples(self._video_paths, label_set)
         self.video_lengths = self._measure_video_lengths(
-            self.video_paths, frame_counter
+            self._video_paths, frame_counter
         )
+
+    @property
+    def video_ids(self):
+        return self._video_paths
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset
     def __getitem__(
         self, index: int
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
-        video_file = self.video_paths[index]
+        video_file = self._video_paths[index]
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)
         frames = self._load_frames(frames_idx, video_file)
@@ -282,7 +297,7 @@ class VideoFolderDataset(VideoDataset):
         return frames, label
 
     def __len__(self):
-        return len(self.video_paths)
+        return len(self._video_paths)
 
     @staticmethod
     def _measure_video_lengths(video_paths, frame_counter):
@@ -371,12 +386,9 @@ class GulpVideoDataset(VideoDataset):
         self._video_ids = self._get_video_ids(self.gulp_dir, filter)
         self.labels = self._label_examples(self._video_ids, self.label_set)
 
-    @staticmethod
-    def _label_examples(video_ids: List[str], label_set: Optional[LabelSet]):
-        if label_set is None:
-            return None
-        else:
-            return [label_set[video_id] for video_id in video_ids]
+    @property
+    def video_ids(self):
+        return self._video_ids
 
     def __len__(self):
         return len(self._video_ids)
@@ -421,6 +433,13 @@ class GulpVideoDataset(VideoDataset):
         if label is not _empty_label:
             return frames, label
         return frames
+
+    @staticmethod
+    def _label_examples(video_ids: List[str], label_set: Optional[LabelSet]):
+        if label_set is None:
+            return None
+        else:
+            return [label_set[video_id] for video_id in video_ids]
 
     @staticmethod
     def _get_video_ids(

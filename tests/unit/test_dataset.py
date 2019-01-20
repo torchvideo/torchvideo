@@ -46,7 +46,7 @@ class TestImageFolderVideoDatasetUnit:
 
         dataset = ImageFolderVideoDataset(dataset_dir, "frame_{:05d}.jpg")
 
-        assert len(dataset.video_dirs) == video_count
+        assert len(dataset._video_dirs) == video_count
 
     def test_filtering_video_folders(self, dataset_dir):
         self.make_video_dirs(dataset_dir, 10)
@@ -58,10 +58,10 @@ class TestImageFolderVideoDatasetUnit:
             dataset_dir, "frame_{:05d}.jpg", filter=filter
         )
 
-        assert len(dataset.video_dirs) == 3
-        assert dataset.video_dirs[0].name == "video1"
-        assert dataset.video_dirs[1].name == "video2"
-        assert dataset.video_dirs[2].name == "video3"
+        assert len(dataset._video_dirs) == 3
+        assert dataset._video_dirs[0].name == "video1"
+        assert dataset._video_dirs[1].name == "video2"
+        assert dataset._video_dirs[2].name == "video3"
 
     def test_labels_are_accessible(self, dataset_dir):
         self.make_video_dirs(dataset_dir, 10)
@@ -102,6 +102,18 @@ class TestImageFolderVideoDatasetUnit:
         assert target == 1
         transform.assert_called_once_with(frames, target=target)
 
+    def test_video_ids(self, dataset_dir):
+        video_count = 10
+        self.make_video_dirs(dataset_dir, video_count)
+
+        dataset = ImageFolderVideoDataset(
+            dataset_dir, "frame_{:05d}.jpg", frame_counter=(lambda path: 10)
+        )
+
+        assert list(map(lambda p: p.name, dataset.video_ids)) == sorted(
+            ["video{}".format(i) for i in range(0, video_count)]
+        )
+
     @staticmethod
     def make_video_dirs(dataset_dir, video_count, frame_count=10):
         for i in range(0, video_count):
@@ -121,7 +133,7 @@ class TestVideoFolderDatasetUnit:
 
         dataset = VideoFolderDataset(dataset_dir)
 
-        assert len(dataset.video_paths) == video_count
+        assert len(dataset._video_paths) == video_count
 
     def test_filtering_video_files(self, dataset_dir, fs, mock_frame_count):
         self.make_video_files(dataset_dir, fs, 10)
@@ -131,10 +143,10 @@ class TestVideoFolderDatasetUnit:
 
         dataset = VideoFolderDataset(dataset_dir, filter=filter)
 
-        assert len(dataset.video_paths) == 3
-        assert dataset.video_paths[0].name == "video1.mp4"
-        assert dataset.video_paths[1].name == "video2.mp4"
-        assert dataset.video_paths[2].name == "video3.mp4"
+        assert len(dataset._video_paths) == 3
+        assert dataset._video_paths[0].name == "video1.mp4"
+        assert dataset._video_paths[1].name == "video2.mp4"
+        assert dataset._video_paths[2].name == "video3.mp4"
 
     def test_labels_are_accessible(self, dataset_dir, fs, mock_frame_count):
         video_count = 10
@@ -185,6 +197,18 @@ class TestVideoFolderDatasetUnit:
 
         assert target == 1
         transform.assert_called_once_with(frames, target=target)
+
+    def test_video_ids(self, dataset_dir, fs):
+        video_count = 10
+        self.make_video_files(dataset_dir, fs, video_count)
+
+        dataset = ImageFolderVideoDataset(
+            dataset_dir, "frame_{:05d}.jpg", frame_counter=(lambda path: 10)
+        )
+
+        assert list(map(lambda p: p.name, dataset.video_ids)) == sorted(
+            ["video{}.mp4".format(i) for i in range(0, video_count)]
+        )
 
     @staticmethod
     def make_video_files(dataset_dir, fs, video_count):

@@ -124,3 +124,9 @@ class TestGulpVideoDataset:
     def test_labels_are_accessible(self, gulp_dataset):
         assert len(gulp_dataset.labels) == self.video_count
         assert all([label == "0" for label in gulp_dataset.labels])
+
+    def test_video_ids(self, gulp_dataset):
+
+        assert gulp_dataset.video_ids == sorted(
+            ["video{}".format(i) for i in range(0, self.video_count)]
+        )

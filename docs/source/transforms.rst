@@ -12,6 +12,14 @@ from :mod:`torchvision.transforms` you can chain together successive transforms 
     :local:
     :depth: 2
 
+Target parameters
+-----------------
+
+All transforms support a `target` parameter. Currently these don't do anything, but
+allow you to implement transforms on targets as well as frames. At some point in
+future it is the intention that we'll support transforms of things like masks, or
+allow you to plug your own target transforms into these classes.
+
 
 Examples
 --------
@@ -70,6 +78,23 @@ torchvideo represents videos in a variety of formats:
   implementation of transforms without have to invert the conversion from one format
   to the other.
 
+
+Composing Transforms
+--------------------
+
+Transforms can be composed with :class:`Compose`. This functions in exactly the same
+way as torchvision's implementation, however it also supports chaining transforms
+that require, or optionally support, or don't support a target parameter. It handles
+the marshalling of targets around and into those transforms depending upon their
+support allowing you to mix transforms defined in this library (all of which support
+a target parameter) and those defined in other libraries.
+
+
+Compose
+~~~~~~~
+
+.. autoclass:: Compose
+    :special-members: __call__
 
 ----
 

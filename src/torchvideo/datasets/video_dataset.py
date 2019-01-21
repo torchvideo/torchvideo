@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union, Optional, Tuple, List, Any  # noqa
 
-import torch.utils
+import torch.utils.data
 
 from torchvideo.samplers import FrameSampler, _default_sampler
 from .label_sets import LabelSet

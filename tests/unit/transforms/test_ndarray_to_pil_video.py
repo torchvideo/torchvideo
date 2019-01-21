@@ -4,7 +4,9 @@ import numpy as np
 import pytest
 from hypothesis import given
 
-from torchvideo.transforms import NDArrayToPILVideo, Compose, CollectFrames
+from torchvideo.transforms import Compose
+from torchvideo.transforms import NDArrayToPILVideo
+from torchvideo.transforms import CollectFrames
 from ..strategies import video_shape
 from .assertions import assert_preserves_label
 

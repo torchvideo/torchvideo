@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, ToPILImage
 
 from torchvideo.datasets import (
-    GulpVideoDataset,
-    DummyLabelSet,
     VideoDataset,
+    DummyLabelSet,
+    GulpVideoDataset,
     VideoFolderDataset,
     ImageFolderVideoDataset,
 )
@@ -21,10 +21,10 @@ from torchvideo.samplers import (
     TemporalSegmentSampler,
 )
 from torchvideo.transforms import (
-    CenterCropVideo,
     TimeApply,
-    CollectFrames,
     PILVideoToTensor,
+    CollectFrames,
+    CenterCropVideo,
 )
 
 parser = argparse.ArgumentParser(
@@ -121,6 +121,8 @@ def main(args) -> None:
 def make_dataset(
     args, sampler: Optional[FrameSampler] = None, transform=None
 ) -> VideoDataset:
+    if sampler is None:
+        sampler = FullVideoSampler()
     dataset_type = args.dataset_type.lower()
     if dataset_type == "gulp":
         if transform is not None:
@@ -150,7 +152,7 @@ def make_dataset(
         raise ValueError("Unknown dataset type '{}'".format(args.dataset_type))
 
 
-def make_sampler(args):
+def make_sampler(args) -> FrameSampler:
     if args.sampler == "full":
         return FullVideoSampler()
     elif args.sampler == "clip":

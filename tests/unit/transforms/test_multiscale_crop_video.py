@@ -1,7 +1,9 @@
 import numpy as np
 from hypothesis import given, strategies as st
 
-from torchvideo.transforms import NDArrayToPILVideo, MultiScaleCropVideo, ImageShape
+from torchvideo.transforms import ImageShape
+from torchvideo.transforms import NDArrayToPILVideo
+from torchvideo.transforms import MultiScaleCropVideo
 from ..strategies import pil_video
 from .assertions import assert_preserves_label
 

@@ -1,7 +1,7 @@
 import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 
-import torchvideo
+import torchvideo.datasets.video_folder_dataset
 
 
 @pytest.fixture
@@ -10,7 +10,9 @@ def mock_frame_count(monkeypatch):
         return 10
 
     monkeypatch.setattr(
-        torchvideo.datasets, "_get_videofile_frame_count", get_videofile_frame_count
+        torchvideo.datasets.video_folder_dataset,
+        "_get_videofile_frame_count",
+        get_videofile_frame_count,
     )
 
 

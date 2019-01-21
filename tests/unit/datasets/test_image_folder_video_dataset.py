@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from torchvideo.datasets import ImageFolderVideoDataset, LambdaLabelSet, DummyLabelSet
+from torchvideo.datasets import LambdaLabelSet
+from torchvideo.datasets import DummyLabelSet
+from torchvideo.datasets import ImageFolderVideoDataset
 from ..mock_transforms import (
     MockFramesOnlyTransform,
     MockFramesAndOptionalTargetTransform,

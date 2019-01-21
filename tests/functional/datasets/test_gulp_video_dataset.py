@@ -5,7 +5,8 @@ import numpy as np
 import pytest
 
 from tests import TEST_DATA_ROOT
-from torchvideo.datasets import GulpVideoDataset, DummyLabelSet
+from torchvideo.datasets import DummyLabelSet
+from torchvideo.datasets import GulpVideoDataset
 from torchvideo.samplers import LambdaSampler
 from unit.mock_transforms import (
     MockFramesAndOptionalTargetTransform,

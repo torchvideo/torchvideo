@@ -317,3 +317,6 @@ def _oversample(video_length: int, sample_length: int) -> List[int]:
 
     missing_frames_count = sample_length - video_length
     return ([0] * missing_frames_count) + list(range(0, video_length))
+
+
+_default_sampler = FullVideoSampler

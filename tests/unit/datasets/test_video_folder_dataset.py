@@ -3,12 +3,10 @@ import os
 import numpy
 
 import torchvideo
-from torchvideo.datasets import (
-    VideoFolderDataset,
-    LambdaLabelSet,
-    DummyLabelSet,
-    ImageFolderVideoDataset,
-)
+from torchvideo.datasets import LambdaLabelSet
+from torchvideo.datasets import DummyLabelSet
+from torchvideo.datasets import VideoFolderDataset
+from torchvideo.datasets import ImageFolderVideoDataset
 from torchvideo.samplers import frame_idx_to_list
 from ..mock_transforms import (
     MockFramesOnlyTransform,
@@ -57,7 +55,9 @@ class TestVideoFolderDatasetUnit:
             return numpy.zeros((frames_count, 10, 20, 3))
 
         monkeypatch.setattr(
-            torchvideo.datasets.VideoFolderDataset, "_load_frames", _load_mock_frames
+            torchvideo.datasets.video_folder_dataset.VideoFolderDataset,
+            "_load_frames",
+            _load_mock_frames,
         )
         video_count = 10
         self.make_video_files(dataset_dir, fs, video_count)

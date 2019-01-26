@@ -16,7 +16,7 @@ except ImportError:
 def show_video(
     frames: Union[torch.Tensor, np.ndarray, List[Image]], fps=30, ndarray_format="THWC"
 ):
-    """Show ``frames`` a video in Jupyter, or in a PyGame window using ``moviepy``.
+    """Show ``frames`` as a video in Jupyter, or in a PyGame window using ``moviepy``.
 
     Args:
         frames: One of:
@@ -34,14 +34,37 @@ def show_video(
         ImageSequenceClip displayed.
 
     """
+    clip = convert_to_clip(frames, fps=fps, ndarray_format=ndarray_format)
+    if ipython_available:
+        return clip.ipython_display()
+    else:
+        return clip.show()
+
+
+def convert_to_clip(frames, fps=30, ndarray_format="THWC"):
+    """Convert ``frames`` to a ``moviepy`` ``ImageSequenceClip``.
+
+    Args:
+        frames: One of:
+
+            - :class:`torch.Tensor` with layout ``CTHW``.
+            - :class:`numpy.ndarray` of layout ``THWC`` or ``CTHW``, if the latter,
+              then set ``ndarray_format`` to ``CTHW``. The array should have a
+              ``np.uint8`` dtype and range ``[0, 255]``.
+            - a list of :class:`PIL.Image.Image`.
+
+        fps (optional): Frame rate of video
+        ndarray_format: 'CTHW' or 'THWC' depending on layout of ndarray.
+
+    Returns:
+        ImageSequenceClip
+    """
+
     if not moviepy_available:
         raise ModuleNotFoundError("moviepy not found, please install moviepy")
     frames_list = _to_list_of_np_frames(frames, ndarray_format=ndarray_format)
-    video = ImageSequenceClip(frames_list, fps=fps)
-    if ipython_available:
-        return video.ipython_display()
-    else:
-        return video.show()
+    clip = ImageSequenceClip(frames_list, fps=fps)
+    return clip
 
 
 def _to_list_of_np_frames(

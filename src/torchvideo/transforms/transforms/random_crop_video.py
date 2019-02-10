@@ -4,7 +4,7 @@ from PIL.Image import Image
 from torchvision.transforms import transforms as tv, functional as F
 
 from .types import PILVideo, PILVideoI
-from .helpers import _canonicalize_size, _to_iter, _peek_iter
+from .internal import canonicalize_size, to_iter, peek_iter
 from .transform import Transform
 
 
@@ -49,15 +49,15 @@ class RandomCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]])
         padding_mode: str = "constant",
     ):
         super().__init__()
-        self.size = _canonicalize_size(size)
+        self.size = canonicalize_size(size)
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
 
     def _gen_params(self, frames: PILVideo) -> Tuple[int, int, int, int]:
-        frames = _to_iter(frames)
-        first_frame, frames = _peek_iter(frames)
+        frames = to_iter(frames)
+        first_frame, frames = peek_iter(frames)
         first_frame = self._maybe_pad(first_frame)
         params = tv.RandomCrop.get_params(first_frame, self.size)
         return params

@@ -8,7 +8,7 @@ from torchvision.transforms import functional as F
 
 from .types import PILVideo, PILVideoI, ImageShape
 from .transform import Transform, FramesAndParams
-from .helpers import _canonicalize_size
+from .internal import canonicalize_size
 
 
 class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]]):
@@ -19,7 +19,7 @@ class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, in
 
     Args:
         size (sequence or int): Desired output size. If size is an
-            int instead of sequence like ``(w, h)``, a square image ``(size, size)`` is
+            int instead of sequence like ``(h, w)``, a square image ``(size, size)`` is
             made.
         scales (sequence): A sequence of floats between in the range :math:`[0, 1]`
             indicating the scale of the crop to be made.
@@ -78,7 +78,7 @@ class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, in
         fixed_crops: bool = True,
         more_fixed_crops: bool = True,
     ):
-        self.size = _canonicalize_size(size)
+        self.size = canonicalize_size(size)
         self.scales = scales
         self.max_distortion = max_distortion
         self.fixed_crops = fixed_crops

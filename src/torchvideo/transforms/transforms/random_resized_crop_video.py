@@ -6,7 +6,7 @@ from torchvision.transforms import transforms as tv, functional as F
 
 from .transform import FramesAndParams, Transform
 from .types import PILVideo, PILVideoI
-from .helpers import _canonicalize_size, _to_iter, _peek_iter
+from .internal import canonicalize_size, to_iter, peek_iter
 
 
 class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, int]]):
@@ -18,7 +18,8 @@ class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int,
     the Inception networks.
 
     Args:
-        size: expected output size of each edge.
+        size: Desired output size. If size is an int instead of sequence like
+            ``(h, w)``, a square image ``(size, size)`` is made.
         scale: range of size of the origin size cropped.
         ratio: range of aspect ratio of the origin aspect ratio cropped.
         interpolation: Default: :py:const:`PIL.Image.BILINEAR` (see
@@ -28,7 +29,7 @@ class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int,
     def _gen_params(
         self, frames: PILVideo
     ) -> FramesAndParams[PILVideo, Tuple[int, int, int, int]]:
-        frame, frames = _peek_iter(_to_iter(frames))
+        frame, frames = peek_iter(to_iter(frames))
         params = tv.RandomResizedCrop.get_params(frame, self.scale, self.ratio)
         return FramesAndParams(frames=frames, params=params)
 
@@ -46,7 +47,7 @@ class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int,
         ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
         interpolation=PIL.Image.BILINEAR,
     ):
-        self.size = _canonicalize_size(size)
+        self.size = canonicalize_size(size)
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio

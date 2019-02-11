@@ -32,13 +32,16 @@ def lintel_loader(
     with path.open("rb") as f:
         video = f.read()
 
-    frames_idx = frame_idx_to_list(frames_idx)
+    frames_idx = np.array(frame_idx_to_list(frames_idx))
+    assert isinstance(frames_idx, np.ndarray)
+    load_idx, reconstruction_idx = np.unique(frames_idx, return_inverse=True)
     frames_data, width, height = lintel.loadvid_frame_nums(
-        video, frame_nums=frames_idx, should_seek=False
+        video, frame_nums=load_idx, should_seek=False
     )
     frames = np.frombuffer(frames_data, dtype=np.uint8)
     # TODO: Support 1 channel grayscale video
     frames = np.reshape(frames, newshape=(len(frames_idx), height, width, 3))
+    frames = frames[reconstruction_idx]
     return (Image.fromarray(frame) for frame in frames)
 
 

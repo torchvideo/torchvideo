@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 
 from pathlib import Path
-from typing import Union, List, Iterator
+from typing import Union, List, Iterator, IO
 
 from PIL import Image
 
@@ -25,28 +25,33 @@ _VIDEO_FILE_EXTENSIONS = {
 
 
 def lintel_loader(
-    path: Path, frames_idx: Union[slice, List[slice], List[int]]
+    file: Union[str, Path, IO[bytes]], frames_idx: Union[slice, List[slice], List[int]]
 ) -> Iterator[Image.Image]:
     import lintel
 
-    with path.open("rb") as f:
-        video = f.read()
+    if isinstance(file, str):
+        file = Path(file)
+    if isinstance(file, Path):
+        with file.open("rb") as f:
+            video = f.read()
+    else:
+        video = file.read()
 
     frames_idx = np.array(frame_idx_to_list(frames_idx))
     assert isinstance(frames_idx, np.ndarray)
     load_idx, reconstruction_idx = np.unique(frames_idx, return_inverse=True)
     frames_data, width, height = lintel.loadvid_frame_nums(
-        video, frame_nums=load_idx, should_seek=False
+        video, frame_nums=load_idx, should_seek=True
     )
     frames = np.frombuffer(frames_data, dtype=np.uint8)
     # TODO: Support 1 channel grayscale video
-    frames = np.reshape(frames, newshape=(len(frames_idx), height, width, 3))
+    frames = np.reshape(frames, newshape=(len(load_idx), height, width, 3))
     frames = frames[reconstruction_idx]
     return (Image.fromarray(frame) for frame in frames)
 
 
 def default_loader(
-    path: Path, frames_idx: Union[slice, List[slice], List[int]]
+    file: Union[str, Path, IO[bytes]], frames_idx: Union[slice, List[slice], List[int]]
 ) -> Iterator[Image.Image]:
     from torchvideo import get_video_backend
 
@@ -55,7 +60,7 @@ def default_loader(
         loader = lintel_loader
     else:
         raise ValueError("Unknown backend '{}'".format(backend))
-    return loader(path, frames_idx)
+    return loader(file, frames_idx)
 
 
 def _get_videofile_frame_count(video_file_path: Path) -> int:

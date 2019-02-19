@@ -21,7 +21,7 @@ dependencies:
     - pytest-cov==2.6.0
     - pytest-xdist==1.24.0
     - pyfakefs==3.5.5
-    - moviepy==0.2.3.5
+    - moviepy==1.0.0
     - gulpio==531.53
     - sphinx==1.8.3
     - sphinx_autodoc_typehints==1.6.0

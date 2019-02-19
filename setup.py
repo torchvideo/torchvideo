@@ -31,7 +31,7 @@ REQUIRED = [
 ]
 
 # What packages are optional?
-EXTRAS = {"visualisation": ["moviepy"], "csv": ["pandas"]}
+EXTRAS = {"visualisation": ["moviepy>=1.0.0"], "csv": ["pandas"]}
 
 # The rest you shouldn't have to touch too much :)
 # ------------------------------------------------

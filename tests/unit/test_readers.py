@@ -61,4 +61,6 @@ class TestLintelReaderUnit:
         args, kwargs = loadvid_frame_nums_mock.call_args
         assert args[0] == f.read()
         np.testing.assert_array_equal(np.array(expected_load_idx), kwargs["frame_nums"])
-        assert kwargs["should_seek"]
+        # Seeking behaviour in lintel is broken and causes C assertion errors at
+        # runtime. Until this is fixed we have to disable it :(
+        assert not kwargs["should_seek"]

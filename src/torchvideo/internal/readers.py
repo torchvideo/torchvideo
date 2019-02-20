@@ -1,3 +1,4 @@
+import logging
 import subprocess
 from collections import namedtuple
 
@@ -9,6 +10,8 @@ from typing import Union, List, Iterator, IO
 from PIL import Image
 
 from torchvideo.samplers import frame_idx_to_list
+
+_LOG = logging.getLogger(__name__)
 
 VideoInfo = namedtuple("VideoInfo", ("height", "width", "n_frames"))
 _VIDEO_FILE_EXTENSIONS = {
@@ -32,6 +35,7 @@ def lintel_loader(
     if isinstance(file, str):
         file = Path(file)
     if isinstance(file, Path):
+        _LOG.debug("Loading data from {}".format(file))
         with file.open("rb") as f:
             video = f.read()
     else:
@@ -40,8 +44,9 @@ def lintel_loader(
     frames_idx = np.array(frame_idx_to_list(frames_idx))
     assert isinstance(frames_idx, np.ndarray)
     load_idx, reconstruction_idx = np.unique(frames_idx, return_inverse=True)
+    _LOG.debug("Converted frames_idx {} to load_idx {}".format(frames_idx, load_idx))
     frames_data, width, height = lintel.loadvid_frame_nums(
-        video, frame_nums=load_idx, should_seek=True
+        video, frame_nums=load_idx, should_seek=False
     )
     frames = np.frombuffer(frames_data, dtype=np.uint8)
     # TODO: Support 1 channel grayscale video

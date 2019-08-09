@@ -26,9 +26,9 @@ REQUIRED = [
     # 'requests', 'maya', 'records',
     "pretrainedmodels",
     "numpy",
-    "torch",
-    "torchvision",
-    "gulpio",
+    "torch>=1.2.0",
+    "torchvision>=0.4.0",
+    "gulpio>=540.66",
 ]
 
 # What packages are optional?

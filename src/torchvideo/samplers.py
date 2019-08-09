@@ -1,7 +1,8 @@
 import itertools
 from abc import ABC
 from typing import Union, List, Callable, Tuple, cast
-from numpy.random import randint, np
+import numpy as np
+from numpy.random import randint
 
 from torchvideo.internal.utils import _is_int
 

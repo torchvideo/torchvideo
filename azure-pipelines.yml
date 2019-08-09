@@ -27,11 +27,8 @@ jobs:
       echo "##vso[task.setvariable variable=conda]$CONDA"
   - task: CacheBeta@0
     inputs:
-      key: |
-        conda
-        $(Agent.OS)
-        $(Build.SourcesDirectory)/environment.yml
-      path: $(Agent.HomeDirectory)/.conda/envs/
+      key: conda-$(Agent.OS)-$(Build.SourcesDirectory)/environment.yml
+      path: $(conda)/envs/
       cacheHitVar: CACHE_RESTORED
     displayName: Cache conda environments
   - script: |

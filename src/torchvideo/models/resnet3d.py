@@ -1,13 +1,13 @@
-from functools import partial
 from collections import defaultdict
-from typing import Dict, Any
+from functools import partial
+from typing import Any, DefaultDict, Dict, Optional
 
-import pretrainedmodels
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
+from pretrainedmodels.models import torchvision_models
 from pretrainedmodels.models.torchvision_models import load_pretrained
+from torch.autograd import Variable
 
 from torchvideo.models.utils import inflate_pretrained
 
@@ -24,21 +24,22 @@ __all__ = [
 
 
 model_base_url = "http://pretorched-x.csail.mit.edu/models/"
-model_urls = {
-    "kinetics-400": defaultdict(
-        None,
-        {
-            "resnet3d18": model_base_url + "resnet3d18_kinetics-e9f44270.pth",
-            "resnet3d34": model_base_url + "resnet3d34_kinetics-7fed38dd.pth",
-            "resnet3d50": model_base_url + "resnet3d50_kinetics-aad059c9.pth",
-            "resnet3d101": model_base_url + "resnet3d101_kinetics-8d4c9d63.pth",
-            "resnet3d152": model_base_url + "resnet3d152_kinetics-575c47e2.pth",
-        },
-    ),
-    "moments": defaultdict(
-        None, {"resnet3d50": model_base_url + "resnet3d50_16seg_moments-6eb53860.pth"}
-    ),
-}
+kinetics_urls: DefaultDict[str, Optional[str]] = defaultdict(
+    lambda: None,
+    {
+        "resnet3d18": model_base_url + "resnet3d18_kinetics-e9f44270.pth",
+        "resnet3d34": model_base_url + "resnet3d34_kinetics-7fed38dd.pth",
+        "resnet3d50": model_base_url + "resnet3d50_kinetics-aad059c9.pth",
+        "resnet3d101": model_base_url + "resnet3d101_kinetics-8d4c9d63.pth",
+        "resnet3d152": model_base_url + "resnet3d152_kinetics-575c47e2.pth",
+    },
+)
+moments_urls: DefaultDict[str, Optional[str]] = defaultdict(
+    lambda: None,
+    {"resnet3d50": model_base_url + "resnet3d50_16seg_moments-6eb53860.pth"},
+)
+
+model_urls = {"kinetics-400": kinetics_urls, "moments": moments_urls}
 
 num_classes = {"kinetics-400": 400, "moments": 339}
 
@@ -245,7 +246,7 @@ def resnet3d10(**kwargs):
     return model
 
 
-def resnet3d18(num_classes=400, pretrained="kinetics-400", shortcut_type="A", **kwargs):
+def resnet3d18(num_classes=400, pretrained="imagenet", shortcut_type="B", **kwargs):
     """Constructs a ResNet3D-18 model."""
     model = ResNet3D(
         BasicBlock,
@@ -255,8 +256,11 @@ def resnet3d18(num_classes=400, pretrained="kinetics-400", shortcut_type="A", **
         **kwargs
     )
     if pretrained is not None:
+        if pretrained.lower() == "imagenet":
+            settings = torchvision_models.pretrained_settings["resnet18"][pretrained]
+            return inflate_pretrained(model, settings)
         settings = pretrained_settings["resnet3d18"][pretrained]
-        model = load_pretrained(model, num_classes, settings)
+        return load_pretrained(model, num_classes, settings)
     return model
 
 
@@ -311,13 +315,11 @@ def resnet3d200(num_classes=400, pretrained="kinetics-400", **kwargs):
     return model
 
 
-def resneti3d50(num_classes=400, pretrained="moments", **kwargs):
+def resneti3d50(num_classes=400, pretrained="imagenet", **kwargs):
     """Constructs a ResNet3D-50 model."""
     model = ResNet3D(Bottleneck, [3, 4, 6, 3], num_classes=num_classes, **kwargs)
     if pretrained is not None:
-        settings = pretrainedmodels.models.torchvision_models.pretrained_settings[
-            "resnet50"
-        ][pretrained]
+        settings = torchvision_models.pretrained_settings["resnet50"][pretrained]
         model = inflate_pretrained(model, settings)
     return model
 

@@ -6,6 +6,21 @@ from torch.utils import model_zoo
 CONV_3D_DIM_TIME = 2
 
 
+def rename_keys(
+    pretrained_state_dict: Dict[str, torch.Tensor], keys_to_rename: Dict[str, str]
+) -> Dict[str, torch.Tensor]:
+    keys = pretrained_state_dict.keys()
+    to_rename = dict()
+    for key in keys:
+        for old_key, new_key in keys_to_rename.items():
+            if key.startswith(old_key):
+                to_rename[key] = key.replace(old_key, new_key)
+    for old_key, new_key in to_rename.items():
+        pretrained_state_dict[new_key] = pretrained_state_dict[old_key]
+        del pretrained_state_dict[old_key]
+    return pretrained_state_dict
+
+
 def inflate_pretrained(
     model: torch.nn.Module, settings: Dict[str, Any]
 ) -> torch.nn.Module:
@@ -25,6 +40,7 @@ def inflate_pretrained(
     """
     net_3d_state_dict = model.state_dict()
     pretrained_state_dict = model_zoo.load_url(settings["url"])
+    rename_keys(pretrained_state_dict, {"fc": "last_linear"})
     inflate_state_dict(net_3d_state_dict, pretrained_state_dict)
     model.load_state_dict(pretrained_state_dict)
     _copy_settings_to_model(model, settings)
@@ -74,13 +90,18 @@ def inflate_param(net_3d_param, net_2d_param):
         net_2d_param.shape[3],
     )
     # Duplicate the parameter across the time dimension
-    inflated_pretrained_params = net_2d_param.unsqueeze(CONV_3D_DIM_TIME).expand(
-        kernel_shape_3d
-    )
+    # It's important to call .contiguous here otherwise the pointer to the 2D kernel
+    # is just duplicated rather than the data itself. We need to expand it out so that
+    # when we divide by the kernel_time_size we don't shoot ourselves in the foot and
+    # end up dividing the parameters by kernel_time_size^2!
+    inflated_pretrained_params = (
+        net_2d_param.unsqueeze(CONV_3D_DIM_TIME).expand(kernel_shape_3d)
+    ).contiguous()
+
     # Normalise the inflated kernel so that kernel produces the same
     # response on a boring video (image duplicated over time) as the
     # original 2D kernel does on the image.
-    inflated_pretrained_params /= kernel_time_size
+    inflated_pretrained_params.div_(kernel_time_size)
     return inflated_pretrained_params
 
 

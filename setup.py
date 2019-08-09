@@ -25,9 +25,9 @@ REQUIRES_PYTHON = ">=3.5.0"
 REQUIRED = [
     # 'requests', 'maya', 'records',
     "numpy",
-    "torch",
-    "torchvision",
-    "gulpio",
+    "torch>=1.2.0",
+    "torchvision>=0.4.0",
+    "gulpio>=540.66",
 ]
 
 # What packages are optional?

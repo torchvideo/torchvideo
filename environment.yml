@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - av=6.2.0
-  - ffmpeg=4.1
+  - ffmpeg
   - lintel=1.0
   - numpy=1.17.0
   - pandas==0.25.0

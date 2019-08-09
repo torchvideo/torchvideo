@@ -7,10 +7,6 @@ trigger:
 - master
 
 jobs:
-
-
-
-
 - job: 'Test'
   pool:
     vmImage: 'Ubuntu-16.04'
@@ -28,13 +24,13 @@ jobs:
       8ersionSpec: '$(python.version)'
       architecture: 'x64'
   - script: |
-      source $HOME/miniconda/etc/profile.d/conda.sh
+      source $CONDA/etc/profile.d/conda.sh
       cat environment.yml
       conda info -a
       conda env create --quiet --name torchvideo --file environment.yml
     displayName: Create conda environment
   - script: |
-      source $HOME/miniconda/etc/profile.d/conda.sh
+      source $CONDA/etc/profile.d/conda.sh
       conda activate torchvideo
       echo $CONDA_PREFIX
       conda install -y pip setuptools
@@ -43,7 +39,7 @@ jobs:
       pushd tests/data/media; ./gen_test_media.sh; popd
     displayName: Download and generate test media
   - script: |
-      source $HOME/miniconda/etc/profile.d/conda.sh
+      source $CONDA/etc/profile.d/conda.sh
       conda activate torchvideo
       pip install -r dev-requirements.txt
       make test
@@ -63,5 +59,8 @@ jobs:
     inputs:
       versionSpec: '3.x'
       architecture: 'x64'
-  - script: python setup.py sdist
+  - script: |
+      source $CONDA/etc/profile.d/conda.sh
+      conda activate torchvideo
+      python setup.py sdist
     displayName: 'Build sdist'

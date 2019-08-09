@@ -38,6 +38,7 @@ jobs:
     displayName: Install python tooling
   - script: |
       source $CONDA/etc/profile.d/conda.sh
+      conda activate torchvideo
       pushd tests/data/media; ./gen_test_media.sh; popd
     displayName: Download and generate test media
   - script: |

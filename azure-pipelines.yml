@@ -29,12 +29,13 @@ jobs:
       architecture: 'x64'
 
   - script: |
+      cat environment.yml
+      conda info -a
       conda env create --quiet --name torchvideo --file environment.yml
     displayName: Create conda environment
 
   - script: |
       conda activate torchvideo
-      conda install -y conda
       conda install -y pip setuptools
     displayName: Install python tooling
 
@@ -43,9 +44,9 @@ jobs:
     displayName: Download and generate test media
 
   - script: |
-      pip install codecov
+      pip install codecov pytest
       make test
-    displayName: 'pytest'
+    displayName: Run tests
 
   - task: PublishTestResults@2
     inputs:

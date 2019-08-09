@@ -1,0 +1,126 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+version: 2
+
+shared: &shared
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+
+      - run:
+        name: Install conda
+        command: |
+          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+          if [[ -d $HOME/miniconda ]]; then
+              bash miniconda.sh -b -u -p $HOME/miniconda;
+          else
+              bash miniconda.sh -b -p $HOME/miniconda;
+          fi
+          export PATH="$HOME/miniconda/bin:$PATH"
+          hash -r
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda info -a
+
+      - run:
+          name: Install dependencies
+          command: |
+            sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
+            cat environment.yml
+            conda env create -n torchvideo -f environment.yml
+            conda activate torchvideo
+            if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
+              pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
+            fi
+            pip install codecov
+
+      - save_cache:
+          key: deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+          paths:
+            - "$HOME/miniconda"
+
+      - run:
+          name: Install torchvideo
+          command: |
+            python setup.py install
+
+      - restore_cache:
+          keys:
+            - test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+
+      - run:
+          name: Download data for system tests
+          command: |
+            if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+              cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
+            fi
+            pushd tests/data/media; ./gen_test_media.sh; popd
+            if [[ ! -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+              mkdir -p /tmp/cache;
+              cp tests/data/media/big_buck_bunny_360p_5mb.mp4 /tmp/cache;
+            fi
+
+      - save_cache:
+          key: test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+          paths:
+            - "/tmp/cache/"
+
+      - run:
+          name: Run tests
+          command: |
+            conda activate torchvideo
+            make test
+
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install linters
+          command:  pip install mypy flake8
+      - run:
+          name: Lint torchvideo
+          command: mypy src/torchvideo
+  run_notebooks:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install jupyter
+          command: pip install jupyter
+      - run:
+          name: Run notebooks
+          command: ./examples/run-notebooks.sh
+  py3.5:
+    <<: *shared
+    docker:
+      - image: circleci/python:3.5
+  py3.6:
+    <<: *shared
+    docker:
+      - image: circleci/python:3.6
+  py3.7:
+    <<: *shared
+    docker:
+      - image: circleci/python:3.7
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - lint
+      - run_notebooks
+      - py3.5
+      - py3.6
+      - py3.7

@@ -10,7 +10,7 @@ jobs:
 
 - job: 'Test'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'Ubuntu-18.04'
   strategy:
     matrix:
       Python27:
@@ -23,8 +23,9 @@ jobs:
 
   steps:
   - task: UsePythonVersion@0
+    displayName: 'Use Python $(python.version)'
     inputs:
-      versionSpec: '$(python.version)'
+      8ersionSpec: '$(python.version)'
       architecture: 'x64'
 
   - script: |
@@ -36,11 +37,11 @@ jobs:
       conda install -y conda
       conda install -y pip setuptools
     displayName: Install python tooling
-  
+
   - script: |
       pushd tests/data/media; ./gen_test_media.sh; popd
     displayName: Download and generate test media
-  
+
   - script: |
       pip install codecov
       make test
@@ -55,7 +56,7 @@ jobs:
 - job: 'Publish'
   dependsOn: 'Test'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'Ubuntu-18.04'
 
   steps:
   - task: UsePythonVersion@0

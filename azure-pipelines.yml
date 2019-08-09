@@ -28,6 +28,7 @@ jobs:
       cat environment.yml
       conda info -a
       conda env create --quiet --name torchvideo --file environment.yml
+      conda activate torchvideo
     displayName: Create conda environment
   - script: |
       source $CONDA/etc/profile.d/conda.sh
@@ -36,6 +37,7 @@ jobs:
       conda install -y pip setuptools
     displayName: Install python tooling
   - script: |
+      source $CONDA/etc/profile.d/conda.sh
       pushd tests/data/media; ./gen_test_media.sh; popd
     displayName: Download and generate test media
   - script: |

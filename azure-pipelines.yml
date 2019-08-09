@@ -12,8 +12,6 @@ jobs:
     vmImage: 'Ubuntu-16.04'
   strategy:
     matrix:
-      Python27:
-        python.version: '2.7'
       Python36:
         python.version: '3.6'
       Python37:
@@ -39,7 +37,8 @@ jobs:
       pushd tests/data/media; ./gen_test_media.sh; popd
     displayName: Download and generate test media
   - script: |
-      pip install codecov pytest pytest-cov pytest-xtest
+      conda activate torchvideo
+      pip install -r dev-requirements.txt
       make test
     displayName: Run tests
   - task: PublishTestResults@2

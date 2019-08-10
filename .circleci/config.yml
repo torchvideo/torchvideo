@@ -86,7 +86,7 @@ jobs:
       - checkout
       - run:
           name: Install linters
-          command:  pip install mypy flake8
+          command: sudo pip install mypy flake8
       - run:
           name: Lint torchvideo
           command: mypy src/torchvideo

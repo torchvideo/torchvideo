@@ -98,7 +98,7 @@ jobs:
       - checkout
       - run:
           name: Install jupyter
-          command: pip install jupyter
+          command: sudo pip install jupyter
       - run:
           name: Run notebooks
           command: ./examples/run-notebooks.sh

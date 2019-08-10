@@ -4,77 +4,77 @@
 version: 2
 
 shared: &shared
-    working_directory: ~/repo
-    steps:
-      - checkout
+  working_directory: ~/repo
+  steps:
+    - checkout
 
-      - restore_cache:
-          keys:
-            - deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+    - restore_cache:
+        keys:
+          - deps-{{ .Branch}}-{{ checksum "environment.yml" }}
 
-      - run:
-        name: Install conda
+    - run:
+      name: Install conda
+      command: |
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+        if [[ -d $HOME/miniconda ]]; then
+            bash miniconda.sh -b -u -p $HOME/miniconda
+        else
+            bash miniconda.sh -b -p $HOME/miniconda
+        fi
+        export PATH="$HOME/miniconda/bin:$PATH"
+        hash -r
+        conda config --set always_yes yes --set changeps1 no
+        conda update -q conda
+        conda info -a
+
+    - run:
+        name: Install dependencies
         command: |
-          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-          if [[ -d $HOME/miniconda ]]; then
-              bash miniconda.sh -b -u -p $HOME/miniconda;
-          else
-              bash miniconda.sh -b -p $HOME/miniconda;
+          sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
+          cat environment.yml
+          conda env create -n torchvideo -f environment.yml
+          conda activate torchvideo
+          if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
+            pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
           fi
-          export PATH="$HOME/miniconda/bin:$PATH"
-          hash -r
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda info -a
+          pip install codecov
 
-      - run:
-          name: Install dependencies
-          command: |
-            sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
-            cat environment.yml
-            conda env create -n torchvideo -f environment.yml
-            conda activate torchvideo
-            if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
-              pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
-            fi
-            pip install codecov
+    - save_cache:
+        key: deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+        paths:
+          - "$HOME/miniconda"
 
-      - save_cache:
-          key: deps-{{ .Branch}}-{{ checksum "environment.yml" }}
-          paths:
-            - "$HOME/miniconda"
+    - run:
+        name: Install torchvideo
+        command: |
+          python setup.py install
 
-      - run:
-          name: Install torchvideo
-          command: |
-            python setup.py install
+    - restore_cache:
+        keys:
+          - test-data-{{ checksum "tests/data/media/md5sums.txt" }}
 
-      - restore_cache:
-          keys:
-            - test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+    - run:
+        name: Download data for system tests
+        command: |
+          if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+            cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
+          fi
+          pushd tests/data/media; ./gen_test_media.sh; popd
+          if [[ ! -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+            mkdir -p /tmp/cache;
+            cp tests/data/media/big_buck_bunny_360p_5mb.mp4 /tmp/cache;
+          fi
 
-      - run:
-          name: Download data for system tests
-          command: |
-            if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
-              cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
-            fi
-            pushd tests/data/media; ./gen_test_media.sh; popd
-            if [[ ! -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
-              mkdir -p /tmp/cache;
-              cp tests/data/media/big_buck_bunny_360p_5mb.mp4 /tmp/cache;
-            fi
+    - save_cache:
+        key: test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+        paths:
+          - "/tmp/cache/"
 
-      - save_cache:
-          key: test-data-{{ checksum "tests/data/media/md5sums.txt" }}
-          paths:
-            - "/tmp/cache/"
-
-      - run:
-          name: Run tests
-          command: |
-            conda activate torchvideo
-            make test
+    - run:
+        name: Run tests
+        command: |
+          conda activate torchvideo
+          make test
 
 
 jobs:

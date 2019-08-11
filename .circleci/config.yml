@@ -24,7 +24,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - dependencies-{{ .Branch}}-{{ checksum "environment.yml" }}
+            - dependencies-v2-{{ .Branch}}-{{ checksum "environment.yml" }}
 
       - run:
           name: Setup conda
@@ -56,10 +56,9 @@ jobs:
             pip install codecov
 
       - save_cache:
-          key: dependencies-{{ .Branch}}-{{ checksum "environment.yml" }}
+          key: dependencies-v2-{{ .Branch}}-{{ checksum "environment.yml" }}
           paths:
             - "/opt/conda/envs"
-            - "/opt/conda/pkgs"
 
       - run:
           name: Install linters

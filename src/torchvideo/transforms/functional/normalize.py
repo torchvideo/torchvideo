@@ -38,7 +38,7 @@ def normalize(
         tensor = tensor.clone()
 
     statistic_shape = tuple([-1] + [1] * ((tensor.dim() - 1)))
-    mean = torch.tensor(mean, dtype=torch.float32).view(*statistic_shape)
-    std = torch.tensor(std, dtype=torch.float32).view(*statistic_shape)
-    tensor.sub_(mean).div_(std)
+    mean_: torch.Tensor = torch.tensor(mean, dtype=torch.float32).view(*statistic_shape)
+    std_: torch.Tensor = torch.tensor(std, dtype=torch.float32).view(*statistic_shape)
+    tensor.sub_(mean_).div_(std_)  # type: ignore
     return tensor

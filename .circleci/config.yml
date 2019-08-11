@@ -50,6 +50,7 @@ jobs:
             # These are OpenCV runtime dependencies
             # See https://github.com/ray-project/ray/issues/923 for details.
             apt install -y libsm6 libxext6 libxrender-dev
+            apt install -y make
             if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
               pip uninstall -y pillow && CC="${CC} -march=native" pip install --force-reinstall pillow-simd;
             fi

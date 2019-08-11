@@ -16,9 +16,15 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
+      - run:
+          name: Set python version
+          command: |
+            [[ -z "$PYTHON_VERSION" ]] && { echo "Python version not specified"; exit 1; }
+            sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
+
       - restore_cache:
           keys:
-            - deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+            - dependencies-{{ .Branch}}-{{ checksum "environment.yml" }}
 
       - run:
           name: Setup conda
@@ -26,36 +32,51 @@ jobs:
             conda config --set always_yes yes --set changeps1 no
             conda update -q conda
             conda info -a
+            echo 'source /opt/conda/etc/profile.d/conda.sh' >> $BASH_ENV
+
+      - run:
+          name: Install compiler
+          command: |
+            apt-get update
+            apt-get install -y gcc g++
 
       - run:
           name: Install dependencies
           command: |
+            cat environment.yml
             [[ -z "$PYTHON_VERSION" ]] && { echo "Python version not specified"; exit 1; }
             sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
             cat environment.yml
+            export CFLAGS="-mavx2"
             conda env create -n torchvideo -f environment.yml
             conda activate torchvideo
             if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
-              pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd;
+              pip uninstall -y pillow && CC="${CC} -march=native" pip install --force-reinstall pillow-simd;
             fi
             pip install codecov
 
       - save_cache:
-          key: deps-{{ .Branch}}-{{ checksum "environment.yml" }}
+          key: dependencies-{{ .Branch}}-{{ checksum "environment.yml" }}
           paths:
-            - "$HOME/miniconda"
-
+            - "/opt/conda/envs"
+            - "/opt/conda/pkgs"
 
       - run:
           name: Install linters
-          command: sudo pip install mypy flake8
+          command: |
+            conda activate torchvideo
+            pip install mypy flake8
+
       - run:
           name: Lint torchvideo
-          command: mypy src/torchvideo
+          command: |
+            conda activate torchvideo
+            mypy src/torchvideo
 
       - run:
           name: Install torchvideo
           command: |
+            conda activate torchvideo
             python setup.py install
 
       - restore_cache:
@@ -65,6 +86,7 @@ jobs:
       - run:
           name: Download data for system tests
           command: |
+            conda activate torchvideo
             if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
               cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
             fi
@@ -87,8 +109,12 @@ jobs:
 
       - run:
           name: Install jupyter
-          command: sudo pip install jupyter
+          command: |
+            conda activate torchvideo
+            pip install jupyter
 
       - run:
           name: Run notebooks
-          command: ./examples/run-notebooks.sh
+          command: |
+            conda activate torchvideo
+            ./examples/run-notebooks.sh

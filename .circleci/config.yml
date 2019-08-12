@@ -7,8 +7,8 @@ workflows:
   build_and_test:
     jobs:
       - py3.7-pillow
+      - py3.7-pillow-simd
       - py3.6-pillow
-      - py3.5-pillow
 
 common_config: &common_config
   docker:
@@ -119,13 +119,13 @@ jobs:
     environment:
       PYTHON_VERSION: 3.7
       IMAGE_BACKEND: Pillow
+  py3.7-pillow-simd:
+    <<: *common_config
+    environment:
+      PYTHON_VERSION: 3.7
+      IMAGE_BACKEND: Pillow-SIMD
   py3.6-pillow:
     <<: *common_config
     environment:
       PYTHON_VERSION: 3.6
-      IMAGE_BACKEND: Pillow
-  py3.5-pillow:
-    <<: *common_config
-    environment:
-      PYTHON_VERSION: 3.5
       IMAGE_BACKEND: Pillow

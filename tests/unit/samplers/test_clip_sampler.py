@@ -28,5 +28,22 @@ class TestClipSampler:
         assert_elems_lt(frame_idx, clip_length - 1)
         assert_elems_gte(frame_idx, 0)
 
+    def test_clip_sampler_samples_central_clip_in_test_mode(self):
+        sampler = ClipSampler(clip_length=3, test=True)
+        frame_idx = sampler.sample(5)
+        assert frame_idx == slice(1, 4, 1)
+
+    @given(st.data())
+    def test_clip_sampler_is_deterministic_in_test_mode(self, data):
+        clip_length = data.draw(st.integers(1, 1000))
+        video_length = data.draw(st.integers(1, 1000))
+        sampler = ClipSampler(clip_length=clip_length, test=True)
+
+        sample_count = 10
+        frame_idx = [sampler.sample(video_length) for _ in range(sample_count)]
+
+        for i in range(1, sample_count):
+            assert frame_idx[i - 1] == frame_idx[i]
+
     def test_repr(self):
         assert repr(ClipSampler(10)) == "ClipSampler(clip_length=10, frame_step=1)"

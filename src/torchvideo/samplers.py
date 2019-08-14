@@ -212,12 +212,16 @@ class TemporalSegmentSampler(FrameSampler):
 
     def __repr__(self):
         return (
-            "{cls_name}(segment_count={segment_count}, "
-            "snippet_length={snippet_length})"
+            "{cls_name}("
+            "segment_count={segment_count}, "
+            "snippet_length={snippet_length}, "
+            "test={test}"
+            ")"
         ).format(
             cls_name=self.__class__.__name__,
             segment_count=self.segment_count,
             snippet_length=self.snippet_length,
+            test=self.test_mode,
         )
 
     def _make_snippet_slice(self, start: int) -> slice:

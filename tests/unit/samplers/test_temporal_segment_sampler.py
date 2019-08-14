@@ -86,14 +86,14 @@ class TestTemporalSegmentSampler:
 
     def test_repr(self):
         assert (
-            repr(TemporalSegmentSampler(1, 5))
-            == "TemporalSegmentSampler(segment_count=1, snippet_length=5)"
+            repr(TemporalSegmentSampler(1, 5, test=False))
+            == "TemporalSegmentSampler(segment_count=1, snippet_length=5, test=False)"
         )
 
     def test_str(self):
         assert (
-            str(TemporalSegmentSampler(1, 5))
-            == "TemporalSegmentSampler(segment_count=1, snippet_length=5)"
+            str(TemporalSegmentSampler(1, 5, test=True))
+            == "TemporalSegmentSampler(segment_count=1, snippet_length=5, test=True)"
         )
 
     def test_segment_length_should_be_greater_than_0(self):

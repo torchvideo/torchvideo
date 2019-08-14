@@ -64,15 +64,18 @@ a
 class ClipSampler(FrameSampler):
     """Sample clips of a fixed duration uniformly randomly from a video."""
 
-    def __init__(self, clip_length: int, frame_step: int = 1):
+    def __init__(self, clip_length: int, frame_step: int = 1, test: bool = False):
         """
         Args:
             clip_length: Duration of clip in frames
             frame_step: The step size between frames, this controls FPS reduction, a
                 step size of 2 will halve FPS, step size of 3 will reduce FPS to 1/3.
+            test: Whether or not to sample in test mode (in test mode the central
+                clip is sampled from the video)
         """
         self.clip_length = clip_length
         self.frame_step = frame_step
+        self.test_mode = test
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
         if video_length <= 0:
@@ -87,7 +90,10 @@ class ClipSampler(FrameSampler):
 
         max_offset = video_length - sample_length
 
-        start_index = 0 if max_offset == 0 else randint(0, max_offset)
+        if self.test_mode:
+            start_index = int(np.floor(max_offset / 2))
+        else:
+            start_index = 0 if max_offset == 0 else randint(0, max_offset)
         return slice(start_index, start_index + sample_length, self.frame_step)
 
     def __repr__(self):

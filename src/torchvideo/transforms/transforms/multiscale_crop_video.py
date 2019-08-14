@@ -130,7 +130,6 @@ class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[ImageShape, Point
                 input_shape, crop_shape, more_fixed_crops=more_fixed_crops
             )
 
-        print(crop_shape, offset)
         return crop_shape, offset
 
     @classmethod

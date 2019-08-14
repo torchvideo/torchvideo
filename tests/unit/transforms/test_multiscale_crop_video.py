@@ -14,9 +14,6 @@ class TestMultiScaleCropVideo:
         crop_height = data.draw(st.integers(1, 10))
         crop_width = data.draw(st.integers(1, 10))
         duration = data.draw(st.integers(1, 10))
-        scale_strategy = st.floats(min_value=0.2, max_value=1)
-        scales = data.draw(st.lists(scale_strategy, min_size=1, max_size=5))
-        max_distortion = data.draw(st.integers(0, len(scales)))
         fixed_crops = data.draw(st.booleans())
         if fixed_crops:
             more_fixed_crops = data.draw(st.booleans())
@@ -26,7 +23,13 @@ class TestMultiScaleCropVideo:
         width = data.draw(st.integers(crop_width, crop_width * 100))
 
         video_shape = (duration, height, width, 3)
-        video = NDArrayToPILVideo()(np.zeros(video_shape, dtype=np.uint8))
+
+        scale_strategy = st.floats(
+            min_value=min(crop_width, crop_height) / min(height, width), max_value=1
+        )
+        scales = data.draw(st.lists(scale_strategy, min_size=1, max_size=5))
+        max_distortion = data.draw(st.integers(0, len(scales)))
+        video = NDArrayToPILVideo()(np.ones(video_shape, dtype=np.uint8))
         transform = MultiScaleCropVideo(
             size=ImageShape(height=crop_height, width=crop_width),
             scales=scales,
@@ -35,10 +38,18 @@ class TestMultiScaleCropVideo:
             more_fixed_crops=more_fixed_crops,
         )
         transformed_video = list(transform(video))
+        print("video_shape", video_shape)
+        print("scales", scales)
+        print("max_distortion", max_distortion)
+        print("fixed_crops", fixed_crops)
+        print("more_fixed_crops", more_fixed_crops)
 
         assert len(transformed_video) == duration
-        assert all([frame.height == crop_height for frame in transformed_video])
-        assert all([frame.width == crop_width for frame in transformed_video])
+        for frame in transformed_video:
+            print("crop_size", np.array(frame).shape)
+            np.testing.assert_allclose(np.array(frame), np.ones_like(frame))
+            assert frame.height == crop_height
+            assert frame.width == crop_width
 
     def test_repr(self):
         transform = MultiScaleCropVideo(
@@ -51,7 +62,7 @@ class TestMultiScaleCropVideo:
 
         assert (
             repr(transform) == "MultiScaleCropVideo("
-            "size=ImageSize(height=10, width=10), "
+            "size=ImageShape(height=10, width=10), "
             "scales=(1, 0.875), "
             "max_distortion=1, "
             "fixed_crops=False, "

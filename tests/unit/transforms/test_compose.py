@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from torchvideo.transforms import Compose
+from torchvideo.transforms import Compose, CenterCropVideo
 from ..mock_transforms import (
     MockFramesOnlyTransform,
     MockFramesAndOptionalTargetTransform,
@@ -57,6 +57,18 @@ class TestCompose:
 
         with pytest.raises(TypeError, match="MyTransform"):
             composed_transform(frames)
+
+    def test_single_level_repr(self):
+        t = CenterCropVideo(224)
+        assert repr(Compose([t])) == f"Compose(transforms=[{t!r}])"
+
+    def test_nested_repr(self):
+        t1 = CenterCropVideo(224)
+        t2 = CenterCropVideo(16)
+        assert (
+            repr(Compose([t1, Compose([t2])]))
+            == f"Compose(transforms=[{t1!r}, Compose(transforms=[{t2!r}])])"
+        )
 
     def gen_transforms(self, count: int) -> Tuple[List[Mock], List[Any]]:
         transforms = []

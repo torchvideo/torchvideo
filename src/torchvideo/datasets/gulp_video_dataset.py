@@ -4,12 +4,13 @@ from typing import Union, Optional, Callable, Tuple, cast, List
 import torch
 
 import numpy as np
+from gulpio import GulpDirectory
 
 from .label_sets import LabelSet, GulpLabelSet
 from .video_dataset import VideoDataset
 from .types import NDArrayVideoTransform, empty_label, Label
 from .helpers import invoke_transform
-from torchvideo.samplers import FrameSampler, _default_sampler
+from ..samplers import FrameSampler, _default_sampler
 
 
 class GulpVideoDataset(VideoDataset):
@@ -29,6 +30,8 @@ class GulpVideoDataset(VideoDataset):
     def __init__(
         self,
         root_path: Union[str, Path],
+        *,
+        gulp_directory: Optional[GulpDirectory] = None,
         filter: Optional[Callable[[str], bool]] = None,
         label_field: Optional[str] = None,
         label_set: Optional[LabelSet] = None,
@@ -51,15 +54,27 @@ class GulpVideoDataset(VideoDataset):
             transform: Optional transform over the :class:`ndarray` with layout
                 ``THWC``. Note you'll probably want to remap the channels to ``CTHW`` at
                 the end of this transform.
+            gulp_directory: Optional gulp directory residing at root_path. Useful if
+                you wish to create a custom label_set using the gulp_directory,
+                which you can then pass in with the gulp_directory itself to avoid
+                reading the gulp metadata twice.
         """
-        from gulpio import GulpDirectory
 
         if transform is None:
 
             def transform(frames):
                 return torch.Tensor(np.rollaxis(frames, -1, 0)).div_(255)
 
-        self.gulp_dir = GulpDirectory(str(root_path))
+        if gulp_directory is not None:
+            if Path(gulp_directory.output_dir) != Path(root_path):
+                raise ValueError(
+                    "Expected gulp_dir.output ({}) to be the same as "
+                    "root_path ({})".format(gulp_directory.output_dir, root_path)
+                )
+            self.gulp_dir = gulp_directory
+        else:
+            self.gulp_dir = GulpDirectory(str(root_path))
+
         label_set = self._get_label_set(self.gulp_dir, label_field, label_set)
         super().__init__(
             root_path, label_set=label_set, sampler=sampler, transform=transform

@@ -1,15 +1,15 @@
-import torch
 from pathlib import Path
-from typing import Union, Optional, Callable, Tuple, List, Iterator
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Union
 
 from PIL.Image import Image
 
 from torchvideo.internal.readers import _get_videofile_frame_count, _is_video_file
 from torchvideo.samplers import FrameSampler, _default_sampler
 from torchvideo.transforms import PILVideoToTensor
-from .types import Label, empty_label, PILVideoTransform
-from .label_sets import LabelSet
+
 from .helpers import invoke_transform
+from .label_sets import LabelSet
+from .types import Label, PILVideoTransform, empty_label
 from .video_dataset import VideoDataset
 
 
@@ -65,9 +65,7 @@ class VideoFolderDataset(VideoDataset):
 
     # TODO: This is very similar to ImageFolderVideoDataset consider merging into
     #  VideoDataset
-    def __getitem__(
-        self, index: int
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Label]]:
+    def __getitem__(self, index: int) -> Union[Any, Tuple[Any, Label]]:
         video_file = self._video_paths[index]
         video_length = self.video_lengths[index]
         frames_idx = self.sampler.sample(video_length)

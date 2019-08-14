@@ -9,15 +9,15 @@ test: unit_test functional_test
 
 .PHONY: unit_test
 unit_test:
-	COVERAGE_FILE=.coverage-unit PYTHONPATH=$(PYTHONPATH) pytest tests/unit
+	COVERAGE_FILE=.coverage-unit PYTHONPATH=$(PYTHONPATH) pytest tests/unit --junitxml=test-results-unit.xml
 
 .PHONY: functional_test
 functional_test:
-	COVERAGE_FILE=.coverage-functional PYTHONPATH=$(PYTHONPATH) pytest tests/functional
+	COVERAGE_FILE=.coverage-functional PYTHONPATH=$(PYTHONPATH) pytest tests/functional --junitxml=test-results-unit.xml
 
 .PHONY: doctest
 doctest:
-	COVERAGE_FILE=.coverage-doctest PYTHONPATH=$(PYTHONPATH) pytest --doctest-modules src
+	COVERAGE_FILE=.coverage-doctest PYTHONPATH=$(PYTHONPATH) pytest --doctest-modules src --junitxml=test-results-doctest.xml
 
 
 .PHONY: docs

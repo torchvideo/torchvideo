@@ -5,8 +5,8 @@ from torch.nn import functional as F
 from torchvideo.models.utils import inflate_param
 
 
-def make_image_and_boring_video(in_channels, time, height, width):
-    input_image = torch.randn((in_channels, height, width))
+def make_image_and_boring_video(in_channels, time, height, width, dtype=torch.float32):
+    input_image = torch.randn((in_channels, height, width), dtype=dtype)
     # transpose to go from CTHW to TCHW
     input_video = torch.stack([input_image.clone() for _ in range(time)]).transpose(
         0, 1

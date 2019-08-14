@@ -152,7 +152,7 @@ class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int, in
         crop_height, crop_width = crop_shape
         w_offset = random.randint(0, input_width - crop_width)
         h_offset = random.randint(0, input_height - crop_height)
-        return w_offset, h_offset
+        return h_offset, w_offset
 
     @classmethod
     def _sample_fixed_offset(

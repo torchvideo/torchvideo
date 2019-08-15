@@ -89,11 +89,20 @@ the marshalling of targets around and into those transforms depending upon their
 support allowing you to mix transforms defined in this library (all of which support
 a target parameter) and those defined in other libraries.
 
+Additionally, we provide a :class:`IdentityTransform` that has a nicer ``__repr__``
+suitable for use as a default transform in :class:`Compose` pipelines.
+
 
 Compose
 ~~~~~~~
 
 .. autoclass:: Compose
+    :special-members: __call__
+
+IdentityTransform
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: IdentityTransform
     :special-members: __call__
 
 ----

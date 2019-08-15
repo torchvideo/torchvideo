@@ -1,7 +1,10 @@
+from itertools import product
+
 import numpy as np
 import pytest
 import torch
-from hypothesis import given, strategies as st, note
+from hypothesis import given, strategies as st, note, assume
+from hypothesis.extra.numpy import arrays
 
 from torchvideo.transforms import NormalizeVideo
 from ..strategies import tensor_video
@@ -11,7 +14,10 @@ from .assertions import assert_preserves_label
 
 class TestNormalizeVideo:
     def test_repr(self):
-        assert repr(NormalizeVideo(128, 15)) == "NormalizeVideo(mean=128, std=15)"
+        assert (
+            repr(NormalizeVideo(128, 15, channel_dim=0))
+            == "NormalizeVideo(mean=128, std=15, channel_dim=0)"
+        )
 
     @given(tensor_video())
     def test_scalar_statistics_smoke(self, video):
@@ -56,38 +62,51 @@ class TestNormalizeVideo:
         assert not torch.equal(pre_transform_tensor, post_transform_tensor)
 
     @pytest.mark.skipif(stats is None, reason="scipy.stats is not available")
-    @given(st.integers(2, 4))
-    def test_distribution_is_normal_after_transform(self, ndim):
+    @given(st.integers(2, 4), st.data())
+    def test_distribution_is_normal_after_transform(self, ndim, data):
         """Basically a direct copy of
         https://github.com/pytorch/vision/blob/master/test/test_transforms.py#L753"""
 
-        def kstest(tensor):
-            p_value = stats.kstest(list(tensor.view(-1)), "norm", args=(0, 1)).pvalue
-            return p_value
+        def samples_from_standard_normal(
+            tensor: torch.Tensor, significance: float
+        ) -> bool:
+            p_value = stats.kstest(tensor.view(-1).numpy(), "norm", args=(0, 1)).pvalue
+            return p_value >= significance
 
-        p_value = 0.0001
+        significance = 0.0001
         for channel_count in [1, 3]:
             # video is normally distributed ~ N(5, 10)
+            channel_dim = 0
             if ndim == 2:
                 shape = [channel_count, 500]
             elif ndim == 3:
                 shape = [channel_count, 10, 50]
             else:
-                shape = [channel_count, 5, 10, 10]
-            video = torch.randn(*shape) * 10 + 5
+                channel_dim = data.draw(st.sampled_from([0, 1]))
+                if channel_dim == 0:
+                    shape = [channel_count, 5, 10, 10]
+                else:
+                    shape = [5, channel_count, 10, 10]
+
+            video = torch.from_numpy(np.random.randn(*shape)).to(torch.float32) * 5 + 10
             # We want the video not to be sampled from N(0, 1)
             # i.e. we want to reject the null hypothesis that video is from this
             # distribution
-            assert kstest(video) <= p_value
+            assume(not samples_from_standard_normal(video, significance))
 
-            mean = [video[c].mean() for c in range(channel_count)]
-            std = [video[c].std() for c in range(channel_count)]
-            normalized = NormalizeVideo(mean, std)(video)
+            def get_stats(video: torch.Tensor, channel_dim, channel_count):
+                video = video.transpose(0, channel_dim)  # put channel dim at 0th index
+                mean = [video[c].mean() for c in range(channel_count)]
+                std = [video[c].std() for c in range(channel_count)]
+                return mean, std
+
+            mean, std = get_stats(video, channel_dim, channel_count)
+            normalized = NormalizeVideo(mean, std, channel_dim=channel_dim)(video)
 
             # Check the video *is* sampled from N(0, 1)
             # i.e. we want to maintain the null hypothesis that the normalised video is
             # from this distribution
-            assert kstest(normalized) >= 0.0001
+            assert samples_from_standard_normal(normalized, significance)
 
     @given(st.data())
     def test_preserves_channel_count(self, data):

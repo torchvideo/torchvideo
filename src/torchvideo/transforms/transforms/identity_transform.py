@@ -1,5 +1,5 @@
-from torchvideo.transforms import StatelessTransform
-from torchvideo.transforms.transforms import InputFramesType
+from .transform import StatelessTransform
+from .types import InputFramesType
 
 
 class IdentityTransform(StatelessTransform[InputFramesType, InputFramesType]):

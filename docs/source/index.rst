@@ -7,7 +7,7 @@ torchvideo
 ==========
 
 Similar to :mod:`torchvision`, :mod:`torchvideo` is a library for working with video in
-pytorch. It contains transforms and dataset classes. It is built atop of
+pytorch. It contains transforms and dataset classes. It is built on top of
 :mod:`torchvision` and designed to be used in conjunction.
 
 .. toctree::

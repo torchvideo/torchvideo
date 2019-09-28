@@ -1,0 +1,131 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+version: 2
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - py3.7-pillow
+      - py3.7-pillow-simd
+      - py3.6-pillow
+
+common_config: &common_config
+  docker:
+    - image: continuumio/miniconda3
+  environment:
+    PYTHON_VERSION: 3.7
+    IMAGE_BACKEND: Pillow
+  working_directory: ~/repo
+  steps:
+    - checkout
+    - run:
+        name: Set python version
+        command: |
+          [[ -z "$PYTHON_VERSION" ]] && { echo "Python version not specified"; exit 1; }
+          sed -i  "s/python=[0-9\.]\+/python=${PYTHON_VERSION}/g" environment.yml
+
+    - restore_cache:
+        keys:
+          - dependencies-v2-{{ .Environment.IMAGE_BACKEND }}-{{ .Branch}}-{{ checksum "environment.yml" }}
+
+    - run:
+        name: Setup conda
+        command: |
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda info -a
+          echo 'source /opt/conda/etc/profile.d/conda.sh' >> $BASH_ENV
+
+    - run:
+        name: Install system deps
+        command: |
+          apt-get update
+          # Needed for building Pillow
+          apt-get install -y gcc g++
+          # These are OpenCV runtime dependencies
+          # See https://github.com/ray-project/ray/issues/923 for details.
+          apt-get install -y libsm6 libxext6 libxrender-dev
+          # Needed for running tests
+          apt-get install -y make
+
+    - run:
+        name: Make conda environment
+        command: |
+          cat environment.yml
+          if [[ ! -d /opt/conda/envs/torchvideo ]]; then
+            export CFLAGS="-mavx2"
+            conda env create -n torchvideo -f environment.yml
+            conda activate torchvideo
+            pip install mypy flake8 jupyter codecov
+            if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
+              pip uninstall -y pillow && CC="${CC} -march=native" pip install --force-reinstall pillow-simd;
+            fi
+          fi
+
+    - save_cache:
+        key: dependencies-v2-{{ .Branch}}-{{ checksum "environment.yml" }}
+        paths:
+          - "/opt/conda/envs"
+
+    - run:
+        name: Lint torchvideo
+        command: |
+          conda activate torchvideo
+          mypy src/torchvideo
+
+    - run:
+        name: Install torchvideo
+        command: |
+          conda activate torchvideo
+          python setup.py install
+
+    - restore_cache:
+        keys:
+          - test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+
+    - run:
+        name: Download data for system tests
+        command: |
+          conda activate torchvideo
+          if [[ -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+            cp /tmp/cache/big_buck_bunny_360p_5mb.mp4 tests/data/media;
+          fi
+          pushd tests/data/media; ./gen_test_media.sh; popd
+          if [[ ! -f /tmp/cache/big_buck_bunny_360p_5mb.mp4 ]]; then
+            mkdir -p /tmp/cache;
+            cp tests/data/media/big_buck_bunny_360p_5mb.mp4 /tmp/cache;
+          fi
+
+    - save_cache:
+        key: test-data-{{ checksum "tests/data/media/md5sums.txt" }}
+        paths:
+          - "/tmp/cache/"
+
+    - run:
+        name: Run tests
+        command: |
+          conda activate torchvideo
+          make test
+
+    - run:
+        name: Run notebooks
+        command: |
+          conda activate torchvideo
+          ./examples/run-notebooks.sh
+jobs:
+  py3.7-pillow:
+    <<: *common_config
+    environment:
+      PYTHON_VERSION: 3.7
+      IMAGE_BACKEND: Pillow
+  py3.7-pillow-simd:
+    <<: *common_config
+    environment:
+      PYTHON_VERSION: 3.7
+      IMAGE_BACKEND: Pillow-SIMD
+  py3.6-pillow:
+    <<: *common_config
+    environment:
+      PYTHON_VERSION: 3.6
+      IMAGE_BACKEND: Pillow

@@ -4,6 +4,7 @@ __all__ = [
     "CenterCropVideo",
     "CollectFrames",
     "Compose",
+    "IdentityTransform",
     "MultiScaleCropVideo",
     "NDArrayToPILVideo",
     "NormalizeVideo",
@@ -20,6 +21,7 @@ __all__ = [
 from .center_crop_video import CenterCropVideo
 from .collect_frames import CollectFrames
 from .compose import Compose
+from .identity_transform import IdentityTransform
 from .multiscale_crop_video import MultiScaleCropVideo
 from .ndarray_to_pil_video import NDArrayToPILVideo
 from .normalize_video import NormalizeVideo

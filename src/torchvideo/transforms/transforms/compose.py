@@ -43,6 +43,11 @@ class Compose:
                 "transform".format(self._first_target_requiring_transform)
             )
 
+    def __repr__(self):
+        return "{cls_name}(transforms={transform_reprs})".format(
+            cls_name=self.__class__.__name__, transform_reprs=repr(self.transforms)
+        )
+
 
 def _supports_target(transform):
     sig = signature(transform)

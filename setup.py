@@ -24,6 +24,7 @@ REQUIRES_PYTHON = ">=3.5.0"
 # What packages are required for this module to be executed?
 REQUIRED = [
     # 'requests', 'maya', 'records',
+    "pretrainedmodels",
     "numpy",
     "torch>=1.2.0",
     "torchvision>=0.4.0",

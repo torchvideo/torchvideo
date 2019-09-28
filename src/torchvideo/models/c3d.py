@@ -104,7 +104,7 @@ class C3D(nn.Module):
         self.fc7 = self._make_linear(fc6_dim, fc7_dim)
         self.last_linear = nn.Linear(fc7_dim, class_count)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         assert x.dim() == 5
         assert x.shape[1] == self.in_channels
 
@@ -139,8 +139,6 @@ class C3D(nn.Module):
         kernel_size: Tuple[int, int, int],
         stride: Tuple[int, int, int],
         padding: Tuple[int, int, int],
-        *args,
-        **kwargs,
     ) -> nn.Conv3d:
         conv = nn.Conv3d(
             in_channels=in_channels,
@@ -148,8 +146,6 @@ class C3D(nn.Module):
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,
-            *args,
-            **kwargs,
         )
         nn.init.normal_(conv.weight, mean=0, std=0.01)
         nn.init.zeros_(conv.bias)

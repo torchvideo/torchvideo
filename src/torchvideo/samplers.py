@@ -252,7 +252,8 @@ class LambdaSampler(FrameSampler):
 
     def sample(self, video_length: int) -> Union[slice, List[int], List[slice]]:
         frame_idx = self._fn(video_length)
-        if not all([i < (video_length - 1) for i in frame_idx_to_list(frame_idx)]):
+        frame_idx_list = frame_idx_to_list(frame_idx)
+        if not all([i < video_length for i in frame_idx_list]):
             raise ValueError(
                 "Invalid frame_idx {} from user provided sampler for video of "
                 "length {}".format(frame_idx, video_length)

@@ -7,24 +7,24 @@ dependencies:
   - av=6.2.0
   - ffmpeg
   - lintel=1.0
-  - numpy=1.17.0
-  - pandas==0.25.0
-  - pytorch=1.2.0
-  - python=3.7.3
+  - numpy=1.17.5
+  - pandas==0.25.3
+  - pytorch=1.4.0
+  - python=3.7.6
   - pip
-  - torchvision=0.4.0
-  - pre_commit==1.18.0
+  - torchvision=0.5.0
+  - pre_commit==1.18.1
   - pip:
     - hypothesis==4.32.3
-    - pytest==5.0.1
-    - pytest-cov==2.7.1
-    - pytest-xdist==1.29.0
-    - pyfakefs==3.6
-    - moviepy==1.0.0
-    - gulpio==531.53
-    - sphinx==2.1.2
-    - sphinx_autodoc_typehints==1.7.0
+    - pytest==5.3.4
+    - pytest-cov==2.8.1
+    - pytest-xdist==1.31.0
+    - pyfakefs==3.7.1
+    - moviepy==1.0.1
+    - gulpio==540.66
+    - sphinx==2.3.1
+    - sphinx_autodoc_typehints==1.10.3
     - sphinx_rtd_theme==0.4.3
-    - pillow-simd==6.0.0.post0
-    - scipy==1.3.1
-    - mypy==0.720
+    - pillow-simd==7.0.0.post3
+    - scipy==1.4.1
+    - mypy==0.761

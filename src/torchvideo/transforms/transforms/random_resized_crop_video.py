@@ -53,15 +53,14 @@ class RandomResizedCropVideo(Transform[PILVideo, PILVideoI, Tuple[int, int, int,
         self.ratio = ratio
 
     def __repr__(self):
-        return (
-            self.__class__.__name__
-            + "(size={size}, interpolation={interpolation}, "
-            + "scale={scale}, ratio={ratio}".format(
-                size=self.size,
-                interpolation=self.interpolation,
-                scale=self.scale,
-                ratio=self.ratio,
-            )
+        return self.__class__.__name__ + (
+            "(size={size}, interpolation={interpolation}, "
+            "scale={scale}, ratio={ratio}"
+        ).format(
+            size=self.size,
+            interpolation=self.interpolation,
+            scale=self.scale,
+            ratio=self.ratio,
         )
 
     def _transform_frame(self, frame: Image, i: int, j: int, h: int, w: int) -> Image:

@@ -66,11 +66,11 @@ class MultiScaleCropVideo(Transform[PILVideo, PILVideoI, Tuple[ImageShape, Point
         crop_shape, offset = params
         for frame in frames:
             yield F.resized_crop(
-                img=frame,
-                i=offset.y,
-                j=offset.x,
-                h=crop_shape.height,
-                w=crop_shape.width,
+                frame,
+                offset.y,
+                offset.x,
+                crop_shape.height,
+                crop_shape.width,
                 size=self.size,
                 interpolation=self.interpolation,
             )

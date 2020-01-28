@@ -1,7 +1,7 @@
 https://download.pytorch.org/whl/cpu/torch-1.0.1.post2-cp37-cp37m-linux_x86_64.whl
-numpy==1.15.4
-pillow==5.3.0
-sphinx==1.8.3
-sphinx_autodoc_typehints==1.6.0
-sphinx_rtd_theme==0.4.2
-torchvision==0.2.1
+numpy==1.17.5
+pillow==7.0.0
+sphinx==2.3.1
+sphinx_autodoc_typehints==1.10.3
+sphinx_rtd_theme==0.4.3
+torchvision==0.5.0

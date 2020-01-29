@@ -1,6 +1,6 @@
 import itertools
 from abc import ABC
-from typing import Union, List, Callable, Tuple, cast
+from typing import Union, List, Callable, Tuple, cast, Optional
 import numpy as np
 from numpy.random import randint
 
@@ -127,27 +127,45 @@ class TemporalSegmentSampler(FrameSampler):
     +         +------------+-------------------+--------------------+
     |         | Test       | 25                | 5                  |
     +---------+------------+-------------------+--------------------+
-
-
     """
 
-    def __init__(self, segment_count: int, snippet_length: int, test: bool = False):
+    def __init__(
+        self,
+        segment_count: int,
+        snippet_length: int,
+        *,
+        sample_count: Optional[int] = None,
+        test: bool = False
+    ):
         """
         Args:
             segment_count: Number of segments to split the video into, from which a
                 snippet is sampled.
             snippet_length: The number of frames in each snippet
+            sample_count: Override the number of samples to be drawn from the
+                segments, by default the sampler will sample a total
+                of ``segment_count`` snippets from the video. In some cases it can be
+                useful to sample fewer than this (effectively choosing ``sample_count``
+                snippets from ``segment_count``).
             test: Whether to sample in test mode or not (see class docstring for
                 training/testing differences)
         """
 
         if segment_count < 1:
             raise ValueError("segment_count must be greater than 0")
+        if sample_count is not None and sample_count > segment_count:
+            raise ValueError(
+                (
+                    "sample_count ({}) must be smaller or equal to "
+                    "segment_count ({})"
+                ).format(sample_count, segment_count)
+            )
         if snippet_length < 1:
             raise ValueError("snippet_length must be greater than 0")
 
         self.test_mode = test
         self.segment_count = segment_count
+        self.sample_count = sample_count if sample_count is not None else segment_count
         self.snippet_length = snippet_length
 
     def sample(self, video_length: int) -> Union[List[slice], List[int]]:
@@ -159,43 +177,73 @@ class TemporalSegmentSampler(FrameSampler):
         Returns:
             Frame indices as list of slices
         """
+        # We can't sample from a video with 0 frames
         if video_length <= 0:
             raise ValueError(
                 "Video must be at least 1 frame long but was {} frames long".format(
                     video_length
                 )
             )
-        # This is quite a fiddly and important bit of code so it's well commented.
-        # We first get the indices of the starts of each segment, and the length of
-        # the segment (which is the same for all segments)
-        # segment_start_idx: shape=(self.segment_count,), range=(0, video_length - 1)
+
+        # If the video is shorter than a single snippet we need to oversample the video
+        # to produce a single snippet, we then duplicate this for all needed snippets.
+        if video_length <= self.snippet_length:
+            return list(
+                np.tile(self._oversample_snippet(video_length), self.segment_count)
+            )
+
+        # If the video is shorted than the number of snippets * segments we need to
+        # sample then we to have overlapping segments from which we draw snippets from.
+        if video_length < self.segment_count * self.snippet_length:
+            return self._oversample_segments(video_length)
+
+        # Otherwise we can split the video up into a bunch of segments and sample a
+        # snippet from each of them, this is the happy path
+        return self._sample(video_length)
+
+    def _sample(self, video_length):
         segment_start_idx, segment_length = self.segment_video(video_length)
-        # If we don't have enough frames in each segment to sample a snippet we have to
-        # fallback to some basic strategy that yields the same number of frames as we'd
-        # get if we *did* have large enough segments, that way the user can always
-        # reshape the video in to segments of equal length.
-        if segment_length < self.snippet_length:
-            # Not a particularly clever way of dealing with short snippets. A better
-            # way would be to see how many potential points we have
-            return [0] * self.segment_count * self.snippet_length
-        # We now sample the position of the snippet within each segment by sampling
-        # an offset and adding it to the starting position of the segment.
-        # snippet_start_idx: shape=(self.segment_count,),
-        #                    range=(0, segment_length - self.snippet_length)
         segment_offsets = self._get_segment_offsets(segment_length)
-        # snippet_start_idx: shape=(self.segment_count,), range=(0, video_length - 1)
-        snippet_start_idx = segment_start_idx + segment_offsets
+        snippet_start_idx = np.round(segment_start_idx + segment_offsets).astype(
+            np.intp
+        )
         return [self._make_snippet_slice(start) for start in snippet_start_idx]
 
-    def _get_segment_offsets(self, segment_length: int) -> Union[int, np.ndarray]:
-        max_offset = segment_length - self.snippet_length
+    def _oversample_segments(self, video_length):
+        assert (
+            self.snippet_length
+            < video_length
+            < self.snippet_length * self.segment_count
+        )
         if self.test_mode:
-            return max_offset // 2
-        if max_offset == 0:
-            return max_offset
-        return np.random.randint(0, max_offset, dtype=np.uint, size=self.segment_count)
+            start_idx = np.linspace(
+                0, video_length - self.snippet_length, self.segment_count
+            ).astype(np.intp)
+        else:
+            possible_snippet_positions = np.arange(
+                video_length - self.snippet_length + 1
+            )
+            replace = len(possible_snippet_positions) < self.segment_count
+            start_idx = np.sort(
+                np.random.choice(
+                    possible_snippet_positions, size=self.segment_count, replace=replace
+                )
+            )
+        return [self._make_snippet_slice(start) for start in start_idx]
 
-    def segment_video(self, video_length: int) -> Tuple[np.ndarray, int]:
+    def _oversample_snippet(self, video_length):
+        assert video_length <= self.snippet_length
+        return np.linspace(0, video_length - 1, self.snippet_length).astype(np.intp)
+
+    def _get_segment_offsets(self, segment_length: float) -> Union[float, np.ndarray]:
+        max_offset = segment_length - self.snippet_length
+        if max_offset <= 0:
+            return 0
+        if self.test_mode:
+            return max_offset / 2
+        return np.random.random(self.segment_count) * max_offset
+
+    def segment_video(self, video_length: int) -> Tuple[np.ndarray, float]:
         """Segment a video of ``video_length`` frames into ``self.segment_count``
         segments.
 
@@ -207,10 +255,8 @@ class TemporalSegmentSampler(FrameSampler):
             the indices of the beginning of each segment in the video.
             ``segment_length`` is the length for all segments.
         """
-        segment_length = video_length // self.segment_count
-        segment_start_idx = (
-            np.arange(self.segment_count, dtype=np.uint) * segment_length
-        )
+        segment_length = video_length / self.segment_count
+        segment_start_idx = np.arange(self.segment_count) * segment_length
         return segment_start_idx, segment_length
 
     def __str__(self):

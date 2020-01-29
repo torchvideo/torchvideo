@@ -1,8 +1,13 @@
+import numpy as np
 import pytest
 from hypothesis import given, strategies as st
+from hypothesis._strategies import composite
 
 from torchvideo.samplers import TemporalSegmentSampler, frame_idx_to_list
-from unit.samplers.assertions import assert_valid_frame_index
+from unit.samplers.assertions import (
+    assert_valid_snippet_index,
+    assert_valid_frame_index,
+)
 
 
 class TestTemporalSegmentSampler:
@@ -11,9 +16,59 @@ class TestTemporalSegmentSampler:
         with pytest.raises(ValueError):
             sampler.sample(0)
 
+    @pytest.mark.parametrize("test_mode", [True, False])
+    def test_oversampling_within_a_segment(self, test_mode):
+        snippet_length = 5
+        video_length = 4
+        segment_count = 2
+        snippet_idx = self.sample(
+            video_length, segment_count, snippet_length, test=test_mode
+        )
+
+        assert_valid_snippet_index(
+            snippet_idx,
+            expected_snippet_length=snippet_length,
+            expected_segment_count=segment_count,
+            video_length=video_length,
+        )
+        assert len(np.unique(snippet_idx)) == video_length
+
+    def test_oversampling_segments_train(self):
+        segment_count = 5
+        snippet_length = 2
+        video_length = 8
+
+        snippet_idx = self.sample(
+            video_length, segment_count, snippet_length, test=False
+        )
+
+        assert_valid_snippet_index(
+            snippet_idx,
+            expected_snippet_length=snippet_length,
+            expected_segment_count=segment_count,
+            video_length=video_length,
+        )
+
+    def test_oversampling_segments_test(self):
+        segment_count = 4
+        snippet_length = 2
+        video_length = 5
+
+        snippet_idx = self.sample(
+            video_length, segment_count, snippet_length, test=True
+        )
+
+        assert_valid_snippet_index(
+            snippet_idx,
+            expected_snippet_length=snippet_length,
+            expected_segment_count=segment_count,
+            video_length=video_length,
+        )
+        assert frame_idx_to_list(snippet_idx) == [0, 1, 1, 2, 2, 3, 3, 4]
+
     @pytest.mark.parametrize(
         "video_length,segment_count,snippet_length," "expected_idx",
-        [(1, 2, 1, [0, 0]), (2, 2, 2, [0, 0, 0, 0])],
+        [(1, 2, 1, [0, 0]), (2, 2, 2, [0, 1, 0, 1])],
     )
     def test_sampling_when_snippets_are_longer_than_segments(
         self, video_length, segment_count, snippet_length, expected_idx
@@ -37,9 +92,12 @@ class TestTemporalSegmentSampler:
         "video_length,segment_count,snippet_length,expected_idx",
         [
             (9, 3, 1, [1, 4, 7]),
+            (13, 8, 1, [0, 2, 4, 5, 7, 8, 10, 12]),
+            (10, 2, 1, [2, 7]),
             (10, 2, 1, [2, 7]),
             (5, 1, 3, [1, 2, 3]),
             (5, 1, 4, [0, 1, 2, 3]),
+            (23, 8, 1, [1, 4, 7, 10, 12, 15, 18, 21]),
         ],
     )
     def test_sampling_in_test_mode_centres_snippets_in_segments(
@@ -111,7 +169,7 @@ class TestTemporalSegmentSampler:
 
     @staticmethod
     def draw_sampler_parameters(data):
-        segment_count = data.draw(st.integers(1, 100))
-        snippet_length = data.draw(st.integers(1, 100))
-        video_length = data.draw(st.integers(1, 10000))
+        segment_count = data.draw(st.integers(1, 100), label="segment_count")
+        snippet_length = data.draw(st.integers(1, 100), label="snippet_length")
+        video_length = data.draw(st.integers(1, 10000), label="video_length")
         return segment_count, snippet_length, video_length

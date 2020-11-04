@@ -5,9 +5,6 @@
 [![Documentation Status](https://readthedocs.org/projects/torchvideo/badge/?version=latest)](https://torchvideo.readthedocs.io/en/latest/?badge=latest)
 
 
-**WARNING: Do not use this library. It is still in development. When this notice is
-removed it will be sufficiently stable for usage.**
-
 A [PyTorch](https://pytorch.org/) library for video-based computer vision tasks. `torchvideo` provides
 dataset loaders specialised for video, video frame samplers, and transformations specifically for video.
 

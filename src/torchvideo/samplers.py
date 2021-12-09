@@ -107,7 +107,7 @@ class TemporalSegmentSampler(FrameSampler):
 
     The video is equally divided into a number of segments, ``segment_count`` and from
     within each segment a snippet, a contiguous sequence of frames,
-    ``snippet_length`` fr+ames long is sampled.
+    ``snippet_length`` frames long is sampled.
 
     There are two variants of sampling. One for training and one for testing. During
     training the snippet location within the segment is uniformly randomly sampled.

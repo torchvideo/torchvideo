@@ -243,4 +243,4 @@ autodoc_inherit_docstrings = True
 # not being able to resolve the types... So, in order to resolve the above the best we can do is
 # install numpy and torch, (Pillow is already installed on RTD) and mock the rest
 
-autodoc_mock_imports = ["gulpio", "lintel", "moviepy", "torchvision"]
+autodoc_mock_imports = ["gulpio2", "lintel", "moviepy", "torchvision"]

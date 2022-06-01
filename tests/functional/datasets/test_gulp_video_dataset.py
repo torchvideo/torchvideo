@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import numpy as np
 
 import pytest
-from gulpio import GulpDirectory
+from gulpio2 import GulpDirectory
 
 from tests import TEST_DATA_ROOT
 from torchvideo.datasets import DummyLabelSet

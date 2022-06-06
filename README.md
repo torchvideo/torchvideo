@@ -4,6 +4,8 @@
 [![codecov](https://codecov.io/gh/torchvideo/torchvideo/branch/master/graph/badge.svg)](https://codecov.io/gh/torchvideo/torchvideo)
 [![Documentation Status](https://readthedocs.org/projects/torchvideo/badge/?version=latest)](https://torchvideo.readthedocs.io/en/latest/?badge=latest)
 
+This repo is forked from the original torchvideo repo (https://github.com/torchvideo/torchvideo),
+fixing gulpio to gulpio2.
 
 A [PyTorch](https://pytorch.org/) library for video-based computer vision tasks. `torchvideo` provides
 dataset loaders specialised for video, video frame samplers, and transformations specifically for video.

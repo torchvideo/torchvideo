@@ -1,5 +1,5 @@
-__title__ = "torchvideo"
-__description__ = "PyTorch video dataset library"
+__title__ = "torchvideo2"
+__description__ = "PyTorch video dataset library forked from torchvideo"
 __url__ = "https://github.com/DaniNem/torchvideo"
 __version__ = "0.0.2"
 __author_email__ = "will.price94+torchvideo@gmail.com"

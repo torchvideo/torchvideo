@@ -1,6 +1,6 @@
 from typing import Iterator, Union, Tuple
 
-from PIL.Image import Image
+from PIL import Image
 from torchvision.transforms import transforms as tv
 
 from .types import PILVideo

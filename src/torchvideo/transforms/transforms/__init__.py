@@ -29,6 +29,7 @@ from .pil_video_to_tensor import PILVideoToTensor
 from .random_crop_video import RandomCropVideo
 from .random_resized_crop_video import RandomResizedCropVideo
 from .random_horizontal_flip_video import RandomHorizontalFlipVideo
+from .flip_color_channels_video import FlipColorChannelsVideo
 from .resize_video import ResizeVideo
 from .time_apply import TimeApply
 from .time_to_channel import TimeToChannel

@@ -4,7 +4,7 @@ from typing import Union, Optional, Callable, Tuple, cast, List
 import torch
 
 import numpy as np
-from gulpio import GulpDirectory
+from gulpio2 import GulpDirectory
 
 from .label_sets import LabelSet, GulpLabelSet
 from .video_dataset import VideoDataset

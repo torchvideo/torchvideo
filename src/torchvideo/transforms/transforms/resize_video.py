@@ -1,10 +1,21 @@
 from typing import Union, Tuple
 
 import PIL
+from PIL import Image
 from torchvision.transforms import transforms as tv, functional as F
-
+from torchvision.transforms.functional import InterpolationMode
 from .types import PILVideo, PILVideoI
 from .transform import StatelessTransform
+
+
+_pil_interpolation_to_str = {
+    InterpolationMode.NEAREST: 'PIL.Image.NEAREST',
+    InterpolationMode.BILINEAR: 'PIL.Image.BILINEAR',
+    InterpolationMode.BICUBIC: 'PIL.Image.BICUBIC',
+    InterpolationMode.LANCZOS: 'PIL.Image.LANCZOS',
+    InterpolationMode.HAMMING: 'PIL.Image.HAMMING',
+    InterpolationMode.BOX: 'PIL.Image.BOX',
+}
 
 
 class ResizeVideo(StatelessTransform[PILVideo, PILVideoI]):
@@ -21,6 +32,8 @@ class ResizeVideo(StatelessTransform[PILVideo, PILVideoI]):
             other options).
     """
 
+
+
     def __init__(
         self, size: Union[Tuple[int, int], int], interpolation=PIL.Image.BILINEAR
     ):
@@ -28,7 +41,7 @@ class ResizeVideo(StatelessTransform[PILVideo, PILVideoI]):
         self.interpolation = interpolation
 
     def __repr__(self):
-        interpolate_str = tv._pil_interpolation_to_str[self.interpolation]
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
         return self.__class__.__name__ + "(size={0!r}, interpolation={1})".format(
             self.size, interpolate_str
         )

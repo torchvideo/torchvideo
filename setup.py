@@ -27,7 +27,7 @@ REQUIRED = [
     "numpy",
     "torch>=1.2.0",
     "torchvision>=0.4.0",
-    "gulpio>=540.66",
+    "gulpio2>=0.0.4",
 ]
 
 # What packages are optional?

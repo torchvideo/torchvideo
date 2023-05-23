@@ -16,6 +16,7 @@ __all__ = [
     "TimeToChannel",
     "RandomResizedCropVideo",
     "ImageShape",
+    "FlipColorChannelsVideo"
 ]
 
 from .center_crop_video import CenterCropVideo

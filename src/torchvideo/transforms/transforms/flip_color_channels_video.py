@@ -8,7 +8,7 @@ from .transform import Transform
 import numpy as np
 
 
-class FlipColorChannelsVideo(Transform[PILVideo, Iterator[Image], None]):
+class FlipColorChannelsVideo(Transform[PILVideo, Iterator[Image.Image], None]):
     """Flips the colors (rgb->bgr) of given video (composed of PIL Images).
 
     """
